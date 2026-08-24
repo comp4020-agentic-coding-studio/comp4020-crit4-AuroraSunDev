@@ -1,9 +1,11 @@
 ---
 import { STRINGS } from "../data/strings";
+
+const ENGLISH_ORDINALS = ["First", "Second", "Third", "Fourth", "Fifth", "Sixth", "Seventh"];
 ---
 
 <section class="guqin" data-testid="scene-guqin" aria-labelledby="guqin-heading">
-  <h2 id="guqin-heading" class="sr-only">古琴</h2>
+  <h2 id="guqin-heading" class="sr-only">At the qin</h2>
 
   <div class="guqin-body">
     <ol class="guqin-strings" role="list">
@@ -16,8 +18,12 @@ import { STRINGS } from "../data/strings";
               data-testid={`string-${index}`}
               data-string={index}
               style={`--string: ${index};`}
-              aria-label={`第${string.ordinal}弦 ${string.degree}`}
+              aria-label={`${ENGLISH_ORDINALS[index]} string, ${string.roman}`}
             >
+              <span class="guqin-string-mark" aria-hidden="true">
+                <span class="guqin-string-han" lang="zh-Hans">{string.degree}</span>
+                <span class="guqin-string-roman">{string.roman}</span>
+              </span>
               <span class="guqin-string-line" aria-hidden="true" />
             </button>
           </li>
@@ -26,5 +32,7 @@ import { STRINGS } from "../data/strings";
     </ol>
   </div>
 
-  <p class="guqin-hint" data-testid="guqin-hint">拨弦，或按 1–7</p>
+  <p class="guqin-hint" data-testid="guqin-hint">
+    Pluck a string — or drag across them, or press <kbd>1</kbd>–<kbd>7</kbd>
+  </p>
 </section>

@@ -10,7 +10,9 @@ import { pluck } from "../lib/guqin";
 const stage = document.querySelector<HTMLElement>('[data-testid="stage"]');
 const strings = [...document.querySelectorAll<HTMLButtonElement>("[data-string]")];
 const sceneButtons = [...document.querySelectorAll<HTMLButtonElement>("[data-scene-to]")];
-const regions = [...document.querySelectorAll<HTMLButtonElement>("[data-region]")];
+// The regions are SVG groups rather than HTML buttons, so that the drawn thing
+// is the control and stays welded to the artwork at any aspect ratio.
+const regions = [...document.querySelectorAll<SVGGElement>("[data-region]")];
 
 const SCENES = ["landscape", "guqin"] as const;
 type Scene = (typeof SCENES)[number];
@@ -134,9 +136,22 @@ if (stage && strings.length > 0) {
 
   // --- the landscape --------------------------------------------------------
 
-  for (const button of regions) {
-    button.addEventListener("click", () => {
-      if (button.dataset.region === "boya") showScene("guqin");
+  function activateRegion(id: string | undefined): void {
+    if (id === "boya") showScene("guqin");
+    // The ambient voices and Zhong Ziqi's reply arrive here next.
+  }
+
+  for (const region of regions) {
+    region.addEventListener("click", () => activateRegion(region.dataset.region));
+
+    // role="button" makes a group announce correctly and tabindex makes it
+    // focusable, but neither makes it answer the keyboard — that part is only
+    // free on a real <button>, and this had to be an SVG group to stay pinned
+    // to the drawing. So Enter and Space are wired by hand.
+    region.addEventListener("keydown", (event) => {
+      if (event.key !== "Enter" && event.key !== " ") return;
+      event.preventDefault();
+      activateRegion(region.dataset.region);
     });
   }
 

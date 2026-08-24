@@ -1,74 +1,86 @@
 /* Scene A — the painting.
-   Two stacked layers: the artwork, which is decorative and inert, and the hit
-   areas, which carry all of the meaning a screen reader or a keyboard can get
-   at. They are positioned in the same 0–100 coordinate space as the drawing. */
+   Nothing in here draws a control. The only feedback an interactive part of the
+   scene gives is that its own ink goes darker, which is why there are no boxes,
+   no labels and no outlines sitting on top of the picture. */
 
 .landscape {
   position: relative;
+  display: grid;
+  place-items: center;
   min-height: 100dvh;
 }
 
 .landscape-frame {
-  position: relative;
   width: 100%;
   height: 100dvh;
-  overflow: hidden;
+  padding: clamp(0.5rem, 2vw, 2rem);
 }
 
 .landscape-art {
-  position: absolute;
-  inset: 0;
   width: 100%;
   height: 100%;
   opacity: var(--ink-density);
-  transition: opacity 1200ms ease;
+  transition: opacity 1400ms ease;
 }
 
-.landscape-regions {
-  position: absolute;
-  inset: 0;
-  margin: 0;
-  padding: 0;
-  list-style: none;
+/* The invisible thing you actually aim at. A few ink strokes are almost nothing
+   to hit, especially with a thumb, so every region carries a rectangle that is
+   generous, transparent, and never drawn. */
+.region-hit {
+  fill: transparent;
+  pointer-events: all;
 }
 
-.landscape-region {
-  position: absolute;
-  left: calc(var(--x) * 1%);
-  top: calc(var(--y) * 1%);
-  width: calc(var(--w) * 1%);
-  height: calc(var(--h) * 1%);
-  /* Comfortably past the 44px floor even where a region is drawn small. */
-  min-width: 2.75rem;
-  min-height: 2.75rem;
-  display: grid;
-  place-items: end center;
-  padding-bottom: 0.4rem;
-  border-radius: 3px;
-  transition: background-color 220ms ease;
+.ink-region {
+  cursor: pointer;
+  /* The whole group leans darker on approach — ink deepening on the page,
+     rather than a highlight laid over it. */
+  transition: filter 260ms ease, opacity 260ms ease;
 }
 
-.landscape-region:hover,
-.landscape-region:focus-visible {
-  background: rgb(156 59 46 / 7%);
+.ink-region:hover,
+.ink-region:focus-visible {
+  filter: contrast(1.28) brightness(0.88);
 }
 
-/* Placeholder labelling, standing in until the drawing arrives — once each
-   region is a recognisable thing in the painting, the name comes off and the
-   picture does the inviting. */
-.landscape-region-name {
-  font-size: 0.85rem;
-  letter-spacing: 0.16em;
-  color: var(--ink-soft);
-  opacity: 0;
-  transition: opacity 220ms ease;
+.ink-region:focus {
+  outline: none;
 }
 
-.landscape-region:hover .landscape-region-name,
-.landscape-region:focus-visible .landscape-region-name {
-  opacity: 1;
+/* A focus ring has to exist and has to not look like a browser widget on a
+   painting: a fine ink rule, only ever shown to a keyboard. */
+.ink-region:focus-visible .region-hit {
+  fill: rgb(20 20 20 / 5%);
+  stroke: var(--ink-soft);
+  stroke-width: 0.35;
+  stroke-dasharray: 1.6 1.2;
 }
 
-[data-phase="still"] .landscape-region-name {
-  opacity: 0.55;
+/* A region currently sounding. Ambient voices latch on, so this is the only
+   way to see what is switched on without labelling anything. */
+.ink-region[data-sounding="true"] {
+  filter: contrast(1.35) brightness(0.82);
+}
+
+/* Fibres in the paper, so the whites are not flat screen white. Rendered once
+   and never animated — a live turbulence filter over a full-screen element is
+   expensive enough to cost frames on the animation that matters. */
+.paper-grain {
+  opacity: var(--grain);
+  pointer-events: none;
+  mix-blend-mode: multiply;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landscape-art,
+  .ink-region {
+    transition-duration: 1ms;
+  }
+}
+
+/* The fall is the page showing through the cliff, so it is filled with the
+   paper colour rather than with white — on a page this pale the difference
+   between the two is the difference between water and a marble pillar. */
+.fall-water {
+  fill: url(#fall-emerge);
 }

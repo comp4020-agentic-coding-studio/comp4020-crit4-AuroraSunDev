@@ -1,5 +1,8 @@
 /* Scene B — the view from behind the instrument.
-   Seven strings running away from you across a lacquered body. */
+   Same ink and paper as the painting: the qin is a dark wash on the page, not a
+   photograph of a lacquered object. Going monochrome here is not a restriction
+   to work around — a black body with pale silk over it is what the thing looks
+   like in every painting of it. */
 
 .guqin {
   display: grid;
@@ -9,24 +12,32 @@
 }
 
 .guqin-body {
+  position: relative;
   align-self: center;
-  width: min(100%, 68rem);
+  width: min(100%, 66rem);
   margin-inline: auto;
-  padding: clamp(1.5rem, 4vh, 3rem) clamp(0.5rem, 3vw, 2rem);
-  /* The qin's lacquered face: dark, warm, and slightly uneven across its
-     length the way a very old finish is. */
+  padding: clamp(1.4rem, 4vh, 2.8rem) clamp(1.5rem, 5vw, 4rem);
+  /* A wash rather than a fill: heavier down the middle where the body is
+     thickest, fading at the ends the way a loaded brush runs dry. */
   background:
-    radial-gradient(120% 90% at 50% 40%, rgb(92 58 38 / 22%), transparent 70%),
-    linear-gradient(180deg, #2b211a 0%, #3a2c22 45%, #241c16 100%);
-  border-radius: 3px;
-  box-shadow: 0 1.5rem 3rem rgb(28 26 23 / 28%);
+    radial-gradient(140% 100% at 50% 45%, rgb(20 20 20 / 4%), transparent 72%),
+    linear-gradient(180deg, #1a1a1a 0%, #2b2b2b 42%, #171717 100%);
+}
+
+/* The qin's two sound holes, suggested rather than drawn. */
+.guqin-body::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(closest-side, rgb(245 245 245 / 7%), transparent) 22% 50% / 6% 22% no-repeat,
+    radial-gradient(closest-side, rgb(245 245 245 / 6%), transparent) 78% 50% / 5% 18% no-repeat;
+  pointer-events: none;
 }
 
 .guqin-strings {
   display: grid;
-  /* Even spacing, and the row height is what makes the hit target big enough
-     to find with a thumb — 44px is the floor and this stays above it. */
-  gap: clamp(0.35rem, 1.4vh, 0.9rem);
+  gap: clamp(0.3rem, 1.3vh, 0.85rem);
   margin: 0;
   padding: 0;
   list-style: none;
@@ -34,36 +45,67 @@
 
 .guqin-string {
   display: grid;
-  place-items: center;
+  grid-template-columns: 3.2rem 1fr;
+  align-items: center;
+  gap: 0.9rem;
   width: 100%;
-  /* Generous, because the string is a line but the thing you aim at is a band.
-     A 1px target would be unplayable with a finger and unpleasant with a mouse. */
+  /* The string is a line, but the thing you aim at is a band. Stays above the
+     44px floor at every viewport, which is what makes it playable with a thumb. */
   min-height: max(2.75rem, 6vh);
-  border-radius: 2px;
 }
 
 .guqin-string:focus-visible {
+  outline-color: var(--paper);
   outline-offset: -3px;
+}
+
+/* The degree name, in the margin where a qin's studs would be. Chinese first
+   because that is what the note is called; the romanisation under it, smaller
+   and quieter, for anyone who cannot read the first one. */
+.guqin-string-mark {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  line-height: 1.1;
+  color: rgb(245 245 245 / 42%);
+  transition: color 240ms ease;
+}
+
+.guqin-string-han {
+  font-family: var(--han);
+  font-size: 0.82rem;
+  letter-spacing: 0.08em;
+}
+
+.guqin-string-roman {
+  font-size: 0.56rem;
+  font-style: italic;
+  letter-spacing: 0.04em;
+  color: rgb(245 245 245 / 30%);
+}
+
+.guqin-string:hover .guqin-string-mark,
+.guqin-string:focus-visible .guqin-string-mark {
+  color: rgb(245 245 245 / 78%);
 }
 
 .guqin-string-line {
   display: block;
   width: 100%;
   /* Wound silk: the low strings are visibly thicker than the high ones. */
-  height: calc(1px + (6 - var(--string)) * 0.55px);
-  border-radius: 2px;
+  height: calc(1px + (6 - var(--string)) * 0.5px);
   background: linear-gradient(
     90deg,
-    rgb(226 214 188 / 35%) 0%,
-    rgb(238 228 205 / 92%) 12%,
-    rgb(238 228 205 / 92%) 88%,
-    rgb(226 214 188 / 35%) 100%
+    rgb(245 245 245 / 22%) 0%,
+    rgb(245 245 245 / 82%) 10%,
+    rgb(245 245 245 / 82%) 90%,
+    rgb(245 245 245 / 22%) 100%
   );
-  box-shadow: 0 1px 2px rgb(0 0 0 / 45%);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 50%);
 }
 
 .guqin-string:hover .guqin-string-line {
-  background: rgb(246 238 220 / 100%);
+  background: rgb(250 250 250 / 95%);
 }
 
 /* The string answering a pluck. This is feedback for something the visitor just
@@ -76,7 +118,7 @@
 @keyframes string-vibrate {
   0% {
     scale: 1 3.2;
-    filter: brightness(1.5);
+    filter: brightness(1.6);
   }
   18% {
     scale: 1 2.1;
@@ -94,11 +136,18 @@
 }
 
 .guqin-hint {
-  margin: 1.25rem 0 0;
+  margin: 1.4rem 0 0;
   text-align: center;
-  font-size: 0.95rem;
-  letter-spacing: 0.2em;
-  color: var(--ink-mist);
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  color: var(--ink-gloss);
+}
+
+.guqin-hint kbd {
+  font-family: var(--latin);
+  font-size: 0.72rem;
+  padding: 0.05rem 0.3rem;
+  border: 1px solid var(--ink-faint);
 }
 
 @media (prefers-reduced-motion: reduce) {

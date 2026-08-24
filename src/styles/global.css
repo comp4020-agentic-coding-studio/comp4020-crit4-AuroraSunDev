@@ -1,24 +1,25 @@
 :root {
-  /* Aged xuan paper. Everything else is judged for contrast against this. */
-  --paper: #f4f1e8;
-  /* Pine-soot ink at full strength — 15:1 on paper, and the darkest thing here. */
-  --ink: #1c1a17;
-  /* A diluted wash for secondary text, still 8.3:1 and safe for body copy. */
-  --ink-soft: #4a463f;
-  /* Two more dilutions. Marks, not text: never put words in these. */
-  --ink-mist: #8d887d;
-  --ink-faint: #c9c4b6;
-  /* Cinnabar, the colour of the seal on a scroll. 6:1 on paper, so it can
-     carry small text as well as draw the focus ring. */
-  --accent: #9c3b2e;
+  /* Ink and paper, and nothing else. Every value below is a neutral grey — no
+     hue anywhere — because the painting is 水墨: black ink, white paper, and
+     the whole range between them made by dilution rather than by colour.
+     Contrast ratios are against --paper. */
+  --paper: #f5f5f5;
+  --ink: #141414; /* full-strength ink, 17.1:1 — the darkest thing here */
+  --ink-soft: #454545; /* 8.8:1, safe for body text */
+  --ink-gloss: #6b6b6b; /* 4.9:1 — as light as the English glosses can go and still pass AA */
+  --ink-mist: #8d8d8d; /* 3.1:1, large text and UI edges only, never prose */
+  --ink-faint: #c6c6c6; /* 1.6:1, marks and rules only */
 
   /* How much ink the painting is carrying. Lifted out here because the artwork
-     is directed by ear and eye rather than drawn to a spec — a note like "too
-     heavy" should land as a number to change, not as a request to redraw. */
-  --ink-density: 0.82;
-  --mist: 0.35;
+     is directed by eye rather than drawn to a spec — a note like "too heavy"
+     should land as a number to change, not as a request to redraw. */
+  --ink-density: 1;
+  --grain: 0.055;
 
   --edge: clamp(1rem, 3vw, 2.5rem);
+
+  --han: "Songti SC", "STSong", "Noto Serif SC", "Source Han Serif SC", serif;
+  --latin: "Iowan Old Style", "Palatino", "Georgia", serif;
 }
 
 *,
@@ -32,7 +33,7 @@ body {
   min-height: 100dvh;
   background: var(--paper);
   color: var(--ink);
-  font-family: "Songti SC", "Song Ti", "STSong", "Noto Serif SC", serif;
+  font-family: var(--latin);
   line-height: 1.6;
   /* The instrument is played by dragging across strings. Without this, a drag
      on a phone scrolls the page instead of sounding a glissando. */
@@ -49,8 +50,8 @@ body {
 }
 
 :where(a, button):focus-visible {
-  outline: 3px solid var(--accent);
-  outline-offset: 2px;
+  outline: 2px solid var(--ink);
+  outline-offset: 3px;
 }
 
 .sr-only {
@@ -65,20 +66,39 @@ body {
   border: 0;
 }
 
-/* The painting's inscription, which is also the page's one h1. On a scroll the
-   title sits in the margin in a vertical column, so that is where it goes. */
+/* The inscription: on a scroll the title sits in the margin in a vertical
+   column, with the reading of it smaller and quieter underneath. */
 .inscription {
   position: fixed;
   top: var(--edge);
   right: var(--edge);
   z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.7rem;
   margin: 0;
-  writing-mode: vertical-rl;
-  font-size: clamp(1.25rem, 2.4vw, 1.9rem);
   font-weight: 400;
-  letter-spacing: 0.22em;
-  color: var(--ink);
   pointer-events: none;
+}
+
+.inscription-han {
+  writing-mode: vertical-rl;
+  font-family: var(--han);
+  font-size: clamp(1.2rem, 2.2vw, 1.75rem);
+  letter-spacing: 0.24em;
+  color: var(--ink);
+}
+
+.inscription-gloss {
+  writing-mode: horizontal-tb;
+  max-width: 7.5rem;
+  text-align: right;
+  font-size: 0.66rem;
+  line-height: 1.45;
+  letter-spacing: 0.06em;
+  font-style: italic;
+  color: var(--ink-gloss);
 }
 
 .scene-nav {
@@ -87,18 +107,17 @@ body {
   right: var(--edge);
   z-index: 3;
   display: flex;
-  gap: 0.75rem;
+  gap: 0.6rem;
 }
 
 .scene-nav button {
-  padding: 0.4rem 0.9rem;
-  font-size: 0.95rem;
-  letter-spacing: 0.14em;
+  padding: 0.35rem 0.85rem;
+  font-size: 0.78rem;
+  letter-spacing: 0.1em;
   color: var(--ink-soft);
   border: 1px solid var(--ink-faint);
-  border-radius: 2px;
-  background: rgb(255 255 255 / 45%);
-  transition: color 180ms ease, border-color 180ms ease;
+  background: rgb(255 255 255 / 55%);
+  transition: color 200ms ease, border-color 200ms ease;
 }
 
 .scene-nav button:hover {
@@ -126,9 +145,8 @@ body {
   display: none;
 }
 
-/* Before the first touch the painting is drawn but has not been played. It sits
-   drained of colour and perfectly still; the only thing moving is whatever
-   invites the first gesture. */
+/* Before the first touch the painting is drawn but has not been played: the
+   ink sits pale, as though it has not fully taken. */
 [data-phase="still"] {
-  --ink-density: 0.55;
+  --ink-density: 0.62;
 }

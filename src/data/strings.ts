@@ -10,16 +10,18 @@ export interface GuqinString {
   readonly ordinal: string;
   /** Its degree in the pentatonic scale. */
   readonly degree: string;
+  /** The degree romanised, for the English label beside it. */
+  readonly roman: string;
 }
 
 export const STRINGS: readonly GuqinString[] = [
-  { ordinal: "一", degree: "徵" },
-  { ordinal: "二", degree: "羽" },
-  { ordinal: "三", degree: "宫" },
-  { ordinal: "四", degree: "商" },
-  { ordinal: "五", degree: "角" },
-  { ordinal: "六", degree: "徵" },
-  { ordinal: "七", degree: "羽" },
+  { ordinal: "一", degree: "徵", roman: "zhǐ" },
+  { ordinal: "二", degree: "羽", roman: "yǔ" },
+  { ordinal: "三", degree: "宫", roman: "gōng" },
+  { ordinal: "四", degree: "商", roman: "shāng" },
+  { ordinal: "五", degree: "角", roman: "jué" },
+  { ordinal: "六", degree: "徵", roman: "zhǐ" },
+  { ordinal: "七", degree: "羽", roman: "yǔ" },
 ];
 
 /**

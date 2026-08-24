@@ -7,14 +7,17 @@ import "../styles/guqin.css";
 ---
 
 <Layout
-  title="高山流水"
-  description="伯牙与钟子期的知音故事，做成一幅可以弹奏的水墨山水：每一个声音都由浏览器实时合成。"
+  title="高山流水 — High Mountains, Flowing Water"
+  description="An ink landscape you can play. Every sound — the qin, the waterfall, the stream, the pine, the bird — is synthesised live in the browser."
 >
-  <h1 class="inscription">高山流水</h1>
+  <h1 class="inscription">
+    <span class="inscription-han" lang="zh-Hans">高山流水</span>
+    <span class="inscription-gloss">High Mountains, Flowing Water</span>
+  </h1>
 
-  <nav class="scene-nav" aria-label="场景">
-    <button type="button" data-testid="to-landscape" data-scene-to="landscape">山水</button>
-    <button type="button" data-testid="to-guqin" data-scene-to="guqin">琴前</button>
+  <nav class="scene-nav" aria-label="Scene">
+    <button type="button" data-testid="to-landscape" data-scene-to="landscape">The landscape</button>
+    <button type="button" data-testid="to-guqin" data-scene-to="guqin">At the qin</button>
   </nav>
 
   <main class="stage" data-testid="stage" data-scene="landscape" data-phase="still">
