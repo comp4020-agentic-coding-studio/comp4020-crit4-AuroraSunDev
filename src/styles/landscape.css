@@ -107,3 +107,54 @@
 .fall-water {
   fill: url(#fall-emerge);
 }
+
+/* Zhong Ziqi's reply, set into the empty upper-left of the paper — where a
+   colophon goes, and where this composition has the most room. Vertical, so it
+   reads as writing on the painting rather than as a caption under it. */
+.zhiyin {
+  position: absolute;
+  top: clamp(3rem, 12%, 8rem);
+  left: clamp(1rem, 7%, 6rem);
+  z-index: 2;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.9rem;
+  margin: 0;
+  pointer-events: none;
+  opacity: 0;
+  translate: 0 -0.6rem;
+  transition: opacity 900ms ease, translate 900ms ease;
+}
+
+.zhiyin[data-shown="true"] {
+  opacity: 1;
+  translate: 0 0;
+}
+
+.zhiyin-han {
+  writing-mode: vertical-rl;
+  margin: 0;
+  font-family: var(--han);
+  font-size: clamp(1rem, 1.8vw, 1.45rem);
+  letter-spacing: 0.26em;
+  line-height: 1.5;
+  color: var(--ink);
+}
+
+.zhiyin-gloss {
+  writing-mode: horizontal-tb;
+  max-width: 9rem;
+  margin: 0.2rem 0 0;
+  font-size: 0.68rem;
+  font-style: italic;
+  line-height: 1.5;
+  letter-spacing: 0.05em;
+  color: var(--ink-gloss);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .zhiyin {
+    transition-duration: 1ms;
+    translate: 0 0;
+  }
+}

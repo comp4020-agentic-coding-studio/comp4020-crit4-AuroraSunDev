@@ -1,7 +1,9 @@
 import { STRING_KEYS } from "../data/strings";
 import { chirp, toggleAmbience } from "../lib/ambience";
-import { ensureAudio, resumeAudio } from "../lib/audio";
+import { ensureAudio, now, resumeAudio } from "../lib/audio";
 import { pluck } from "../lib/guqin";
+import { appendEvent, asLoop, type NoteEvent } from "../lib/performance";
+import { analyse, replyMotif } from "../lib/zhiyin";
 
 // Wiring only: this file connects gestures to the synthesiser and moves the
 // page between its two scenes. Everything it knows about how things look, it
@@ -22,6 +24,14 @@ if (stage && strings.length > 0) {
   const scenes = new Map<Scene, HTMLElement | null>(
     SCENES.map((name) => [name, document.querySelector<HTMLElement>(`[data-testid="scene-${name}"]`)]),
   );
+
+  // Everything played this session, oldest first, capped at a phrase.
+  let played: NoteEvent[] = [];
+  let loopTimers: number[] = [];
+
+  const zhiyin = document.querySelector<HTMLElement>('[data-testid="zhiyin"]');
+  const zhiyinHan = document.querySelector<HTMLElement>('[data-testid="zhiyin-han"]');
+  const zhiyinGloss = document.querySelector<HTMLElement>('[data-testid="zhiyin-gloss"]');
 
   const keyToString = new Map<string, number>();
   for (const [index, keys] of STRING_KEYS.entries()) {
@@ -50,8 +60,42 @@ if (stage && strings.length > 0) {
 
   // --- scenes ---------------------------------------------------------------
 
+  // Your own phrase, running quietly under the painting when you come back to
+  // it. This is re-synthesised from the note events, not replayed from a
+  // recording — the same reason there is no record button.
+  function stopPhraseLoop(): void {
+    for (const timer of loopTimers) clearTimeout(timer);
+    loopTimers = [];
+  }
+
+  function startPhraseLoop(): void {
+    stopPhraseLoop();
+    const loop = asLoop(played);
+    if (loop.length < 3) return;
+
+    const span = loop[loop.length - 1].time + 2.2;
+    const run = (): void => {
+      for (const note of loop) {
+        loopTimers.push(
+          window.setTimeout(() => pluck(note.stringIndex, note.velocity * 0.38), note.time * 1000),
+        );
+      }
+      loopTimers.push(window.setTimeout(run, span * 1000));
+    };
+    run();
+  }
+
   function showScene(name: Scene): void {
     stage!.dataset.scene = name;
+
+    if (name === "guqin") {
+      // Playing over your own loop would be confusing, and the buffer is about
+      // to change anyway.
+      stopPhraseLoop();
+      if (zhiyin) zhiyin.dataset.shown = "false";
+    } else {
+      startPhraseLoop();
+    }
 
     // Hiding a scene with CSS still leaves its buttons in the tab order, which
     // is how a keyboard ends up plucking strings that are not on screen.
@@ -88,6 +132,10 @@ if (stage && strings.length > 0) {
     if (!Number.isInteger(index)) return;
     pluck(index, velocity);
     ring(button);
+    // Ziqi is not switched on by a button and does not need to be told to start
+    // — he has been listening the whole time. Every pluck goes into the buffer
+    // as it happens; clicking him asks what he made of it.
+    played = appendEvent(played, { time: now(), stringIndex: index, velocity });
   }
 
   for (const button of strings) {
@@ -142,6 +190,27 @@ if (stage && strings.length > 0) {
 
     if (id === "boya") {
       showScene("guqin");
+      return;
+    }
+
+    if (id === "ziqi") {
+      const reading = analyse(played);
+
+      if (zhiyin && zhiyinHan && zhiyinGloss) {
+        zhiyinHan.textContent = reading.line.han;
+        zhiyinGloss.textContent = reading.line.gloss;
+        zhiyin.dataset.shown = "true";
+      }
+
+      // He answers in kind rather than repeating you: low and spaced for a
+      // mountain, high and quick for water. Scheduled from the main thread
+      // because these are a second apart, not milliseconds.
+      for (const note of replyMotif(reading)) {
+        window.setTimeout(() => pluck(note.stringIndex, note.velocity), note.at * 1000);
+      }
+
+      region.dataset.sounding = "true";
+      window.setTimeout(() => delete region.dataset.sounding, 1800);
       return;
     }
 

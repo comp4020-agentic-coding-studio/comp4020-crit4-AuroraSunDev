@@ -95,47 +95,61 @@ function startStream(context: AudioContext): Running {
   gain.gain.value = 0;
   gain.connect(masterBus());
 
-  const source = noiseSource(context);
-  const band = context.createBiquadFilter();
-  band.type = "bandpass";
-  band.frequency.value = 1500;
-  band.Q.value = 1.2;
-  source.connect(band);
-  band.connect(gain);
-  source.start();
+  // Barely there. The first version of this voice was broadband noise through a
+  // bandpass, which is the *same object* as the waterfall with the filter moved
+  // — and it sounded like it: a small waterfall, not a brook. A stream is
+  // mostly not broadband. It is a great many separate little events, and the
+  // wash between them should be almost inaudible.
+  const bed = noiseSource(context);
+  const bedBand = context.createBiquadFilter();
+  bedBand.type = "bandpass";
+  bedBand.frequency.value = 2400;
+  bedBand.Q.value = 0.9;
+  const bedLevel = context.createGain();
+  bedLevel.gain.value = 0.13;
+  bed.connect(bedBand);
+  bedBand.connect(bedLevel);
+  bedLevel.connect(gain);
+  bed.start();
 
   const timers: number[] = [];
 
-  // The bubbles are what stop this being a smaller waterfall. Each one is a
-  // narrow resonance sweeping upward over about seventy milliseconds — which
-  // is, more or less, literally what a bubble is: a cavity whose pitch rises as
-  // it collapses.
+  // 潺潺 is this: bubbles, and a lot of them.
+  //
+  // A bubble in water is very nearly a sine tone that rises in pitch as it
+  // collapses — the Minnaert resonance, where the frequency goes up as the
+  // cavity shrinks. Filtered noise was the wrong model and sounded like it;
+  // an oscillator is both simpler and correct, and it is what gives the voice
+  // the tonal, trickling quality that broadband hiss cannot have. Small
+  // bubbles ring high and briefly, big ones low and longer.
   const bubble = (): void => {
-    const at = context.currentTime;
-    const source_ = noiseSource(context);
-    const resonance = context.createBiquadFilter();
-    resonance.type = "bandpass";
-    resonance.Q.value = 9;
-    const from = 480 + Math.random() * 320;
-    resonance.frequency.setValueAtTime(from, at);
-    resonance.frequency.exponentialRampToValueAtTime(from * 2.2, at + 0.07);
+    const burst = 1 + Math.floor(Math.random() * 3);
+    for (let i = 0; i < burst; i++) {
+      const at = context.currentTime + i * (0.012 + Math.random() * 0.05);
+      const size = Math.random();
+      const from = 360 + (1 - size) * 1500 + Math.random() * 260;
+      const span = 0.03 + size * 0.07;
 
-    const envelope = context.createGain();
-    envelope.gain.setValueAtTime(0, at);
-    envelope.gain.linearRampToValueAtTime(0.1 + Math.random() * 0.1, at + 0.008);
-    envelope.gain.exponentialRampToValueAtTime(0.0001, at + 0.09);
+      const voice = context.createOscillator();
+      voice.type = "sine";
+      voice.frequency.setValueAtTime(from, at);
+      voice.frequency.exponentialRampToValueAtTime(from * (1.35 + Math.random() * 1.15), at + span);
 
-    source_.connect(resonance);
-    resonance.connect(envelope);
-    envelope.connect(gain);
-    source_.start(at);
-    source_.stop(at + 0.1);
+      const envelope = context.createGain();
+      envelope.gain.setValueAtTime(0, at);
+      envelope.gain.linearRampToValueAtTime(0.05 + Math.random() * 0.1, at + 0.004);
+      envelope.gain.exponentialRampToValueAtTime(0.0001, at + span);
 
-    timers.push(window.setTimeout(bubble, 240 + Math.random() * 620));
+      voice.connect(envelope);
+      envelope.connect(gain);
+      voice.start(at);
+      voice.stop(at + span + 0.02);
+    }
+    timers.push(window.setTimeout(bubble, 55 + Math.random() * 250));
   };
-  timers.push(window.setTimeout(bubble, 220));
+  timers.push(window.setTimeout(bubble, 120));
 
-  return { gain, level: 0.2, sources: [source], timers };
+  return { gain, level: 0.22, sources: [bed], timers };
 }
 
 function startPine(context: AudioContext): Running {
@@ -143,37 +157,76 @@ function startPine(context: AudioContext): Running {
   gain.gain.value = 0;
   gain.connect(masterBus());
 
-  const source = noiseSource(context);
-  const band = context.createBiquadFilter();
-  band.type = "bandpass";
-  band.frequency.value = 3800;
-  band.Q.value = 0.8;
-
-  // Needles do not rustle steadily; wind arrives in gusts and the sound is the
-  // envelope, not the noise. This node is the gust.
-  const gust = context.createGain();
-  gust.gain.value = 0.12;
-
-  source.connect(band);
-  band.connect(gust);
-  gust.connect(gain);
-  source.start();
+  // A thread of moving air under the leaves, so the grains below are not
+  // isolated ticks in silence.
+  const bed = noiseSource(context);
+  const bedBand = context.createBiquadFilter();
+  bedBand.type = "bandpass";
+  bedBand.frequency.value = 2600;
+  bedBand.Q.value = 0.7;
+  const bedLevel = context.createGain();
+  bedLevel.gain.value = 0.03;
+  bed.connect(bedBand);
+  bedBand.connect(bedLevel);
+  bedLevel.connect(gain);
+  bed.start();
 
   const timers: number[] = [];
-  const breathe = (): void => {
-    const at = context.currentTime;
-    const peak = 0.35 + Math.random() * 0.6;
-    const rise = 0.7 + Math.random() * 1.3;
-    const fall = 1.3 + Math.random() * 2;
-    gust.gain.cancelScheduledValues(at);
-    gust.gain.setValueAtTime(gust.gain.value, at);
-    gust.gain.linearRampToValueAtTime(peak, at + rise);
-    gust.gain.linearRampToValueAtTime(0.1, at + rise + fall);
-    timers.push(window.setTimeout(breathe, (rise + fall) * 1000 + Math.random() * 800));
-  };
-  breathe();
 
-  return { gain, level: 0.18, sources: [source], timers };
+  // A gust is not a volume envelope over a steady rustle. That was the first
+  // version and it was too even — turning one continuous hiss up and down.
+  //
+  // What actually changes when the wind drops is the *rate*: a hard gust is
+  // many needle-strikes crowding together, and as it dies they thin out and
+  // slow down as well as getting quieter. So the rustle is granular — short
+  // filtered bursts — and `strength` drives both how loud each grain is and
+  // how long until the next one. The slowing is the part you hear.
+  let strength = 0;
+
+  const grain = (): void => {
+    const at = context.currentTime;
+
+    if (strength > 0.02) {
+      const span = 0.03 + Math.random() * 0.06;
+      const rustle = noiseSource(context);
+      const band = context.createBiquadFilter();
+      band.type = "bandpass";
+      // Higher and thinner at the peak of a gust; duller as it settles.
+      band.frequency.value = 2400 + strength * 2600 + Math.random() * 1800;
+      band.Q.value = 1.3 + Math.random() * 2.2;
+
+      const envelope = context.createGain();
+      const peak = strength * (0.05 + Math.random() * 0.1);
+      envelope.gain.setValueAtTime(0, at);
+      envelope.gain.linearRampToValueAtTime(peak, at + 0.006);
+      envelope.gain.exponentialRampToValueAtTime(0.0001, at + span);
+
+      rustle.connect(band);
+      band.connect(envelope);
+      envelope.connect(gain);
+      rustle.start(at);
+      rustle.stop(at + span + 0.02);
+    }
+
+    bedLevel.gain.setTargetAtTime(0.02 + strength * 0.08, at, 0.2);
+    strength *= 0.988;
+
+    // The interval grows as the gust dies. At full strength the grains crowd
+    // to about thirty milliseconds apart; by the tail they are five or six a
+    // second. Same texture, slowing down.
+    const interval = 20 + (1 - strength) * 200 + Math.random() * 45;
+    timers.push(window.setTimeout(grain, interval));
+  };
+
+  const gustArrives = (): void => {
+    strength = Math.min(1, strength + 0.55 + Math.random() * 0.45);
+    timers.push(window.setTimeout(gustArrives, 3400 + Math.random() * 5600));
+  };
+
+  timers.push(window.setTimeout(gustArrives, 250));
+  grain();
+
+  return { gain, level: 0.24, sources: [bed], timers };
 }
 
 const BUILDERS: Record<AmbienceId, (context: AudioContext) => Running> = {

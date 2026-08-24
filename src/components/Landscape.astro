@@ -411,4 +411,12 @@ function hitRect(hit: string): { x: number; y: number; width: number; height: nu
       <rect class="paper-grain" x="0" y="0" width="160" height="100" filter="url(#grain)" />
     </svg>
   </div>
+
+  <!-- What Ziqi says, written into the empty part of the paper the way a
+       colophon is. aria-live rather than a dialog: it is a remark, and it
+       should reach a screen reader without stealing focus from the painting. -->
+  <div class="zhiyin" data-testid="zhiyin" data-shown="false" aria-live="polite">
+    <p class="zhiyin-han" lang="zh-Hans" data-testid="zhiyin-han"></p>
+    <p class="zhiyin-gloss" data-testid="zhiyin-gloss"></p>
+  </div>
 </section>
