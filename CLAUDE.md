@@ -92,3 +92,47 @@ green**, because nothing here renders the page or looks at pixels.
 The general lesson, which outlives `sips`: an asset pipeline can only be
 verified by rendering the page and sampling actual pixels. Typecheck, build,
 lint and the spec suite all passed while the home page was blank.
+
+## Render the page and look at it, every time
+
+The rule above was written about images and turned out to be about everything.
+In crit 4 the same blind spot produced a waterfall that read as a stone
+obelisk, a row of distant trees that came out as crucifixes across the middle
+of the painting, and a stream that read as a paved road — none of which any
+check in this repo can see, all of which are obvious in a screenshot.
+
+So: **anything visual gets rendered and looked at before it is called done.**
+Headless Chrome is enough —
+
+```sh
+pnpm build && pnpm preview --port 4990
+"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless=new \
+  --disable-gpu --hide-scrollbars --force-device-scale-factor=1 \
+  --screenshot=/tmp/shot.png --window-size=1920,1080 \
+  "http://localhost:4990/<repo>/"
+```
+
+Two traps in that loop, both of which have already wasted time here:
+
+- **Headless clamps its layout viewport at roughly 490px.** Asking for
+  `--window-size=390,844` does not give a 390px layout; it gives a ~490px
+  layout cropped to 390, so the phone viewport silently lies and reports
+  overflow that does not exist. Load the page in a 390px `<iframe>` on a wider
+  window when checking the small viewport.
+- **Virtual time does not chain `requestAnimationFrame`.** CSS animations
+  advance under `--virtual-time-budget`, a rAF loop does not, so a screenshot
+  can confirm a keyframe animation but never a JS-driven one. Verify those in a
+  real browser, and say so rather than claiming they were checked.
+
+## Sensors have to be able to see the thing they measure
+
+A check that cannot reach its subject is worse than no check, because it
+reports on the subject anyway. `spec/instrument.test.ts` globbed `dist/**/*.js`
+for evidence of synthesis while Astro was inlining the entry script into the
+HTML and emitting no `.js` at all — so it failed while saying the page had no
+audio in it, and would have started passing on the unrelated day the bundle
+grew past the inlining threshold.
+
+Before trusting a new check, **make it fail for the right reason once**: feed
+it something it should reject and read the message it prints. If the message
+would not have told you what was actually wrong, the check is not finished.
