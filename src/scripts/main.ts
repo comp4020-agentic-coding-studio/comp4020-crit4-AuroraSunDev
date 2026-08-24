@@ -1,4 +1,5 @@
 import { STRING_KEYS } from "../data/strings";
+import { chirp, toggleAmbience } from "../lib/ambience";
 import { ensureAudio, resumeAudio } from "../lib/audio";
 import { pluck } from "../lib/guqin";
 
@@ -136,13 +137,36 @@ if (stage && strings.length > 0) {
 
   // --- the landscape --------------------------------------------------------
 
-  function activateRegion(id: string | undefined): void {
-    if (id === "boya") showScene("guqin");
-    // The ambient voices and Zhong Ziqi's reply arrive here next.
+  function activateRegion(region: SVGGElement): void {
+    const id = region.dataset.region;
+
+    if (id === "boya") {
+      showScene("guqin");
+      return;
+    }
+
+    if (id === "bird") {
+      chirp();
+      // No latched state: the bird answers once and stops. Marking it as
+      // sounding for the length of the call is the only way to see that the
+      // click did anything.
+      region.dataset.sounding = "true";
+      window.setTimeout(() => delete region.dataset.sounding, 900);
+      return;
+    }
+
+    if (id === "waterfall" || id === "stream" || id === "tree") {
+      const on = toggleAmbience(id);
+      // The ink deepens while a voice is running. There is no switch drawn
+      // anywhere, so this is the only thing telling you what is currently
+      // making noise.
+      if (on) region.dataset.sounding = "true";
+      else delete region.dataset.sounding;
+    }
   }
 
   for (const region of regions) {
-    region.addEventListener("click", () => activateRegion(region.dataset.region));
+    region.addEventListener("click", () => activateRegion(region));
 
     // role="button" makes a group announce correctly and tabindex makes it
     // focusable, but neither makes it answer the keyboard — that part is only
@@ -151,7 +175,7 @@ if (stage && strings.length > 0) {
     region.addEventListener("keydown", (event) => {
       if (event.key !== "Enter" && event.key !== " ") return;
       event.preventDefault();
-      activateRegion(region.dataset.region);
+      activateRegion(region);
     });
   }
 
