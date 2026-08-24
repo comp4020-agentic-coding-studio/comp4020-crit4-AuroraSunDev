@@ -37,24 +37,70 @@ function noiseSource(context: AudioContext): AudioBufferSourceNode {
   return source;
 }
 
+function clamp01(value: number): number {
+  return Math.min(Math.max(value, 0), 1);
+}
+
 export type AmbienceId = "waterfall" | "stream" | "tree";
+/** Everything with a control pad, including the two that are not continuous. */
+export type ControlId = AmbienceId | "bird" | "qin";
+
+export interface VoiceParams {
+  /**
+   * 0…1, and what "faster" means is deliberately different for each voice.
+   * A waterfall has no tempo, so its rate is how hard the water is coming
+   * down; the stream's is how thickly the bubbles arrive; the pine's is how
+   * often it gusts; the bird's is how quickly it gets its syllables out; the
+   * qin's is how fast the phrase is taken.
+   */
+  rate: number;
+  level: number;
+}
+
+const CENTRE: VoiceParams = { rate: 0.5, level: 0.5 };
+
+const params = new Map<ControlId, VoiceParams>([
+  ["waterfall", { ...CENTRE }],
+  ["stream", { ...CENTRE }],
+  ["tree", { ...CENTRE }],
+  ["bird", { ...CENTRE }],
+  ["qin", { ...CENTRE }],
+]);
+
+export function getParams(id: ControlId): VoiceParams {
+  return params.get(id) ?? { ...CENTRE };
+}
+
+/** Loudness multiplier, arranged so that the middle of the pad is unity. */
+function levelScale(level: number): number {
+  return 0.1 + level * 1.8;
+}
+
+/** Speed multiplier, likewise centred on 1. */
+function rateScale(rate: number): number {
+  return 0.35 + rate * 1.3;
+}
 
 interface Running {
   readonly gain: GainNode;
-  readonly level: number;
+  readonly base: number;
   readonly sources: AudioScheduledSourceNode[];
   readonly timers: number[];
-  /**
-   * How hard this voice is going right now, 0…1.
-   *
-   * The drawing reads this. Wind is the reason it exists: the pine gusts, and
-   * the needles have to move with the same gust that is making the sound, or
-   * the picture and the audio are two separate performances of the same idea.
-   */
   readonly intensity: () => number;
+  /** Push changed knobs into a voice that is already sounding. */
+  readonly apply: (next: VoiceParams) => void;
 }
 
 const running = new Map<AmbienceId, Running>();
+
+export function setParams(id: ControlId, patch: Partial<VoiceParams>): VoiceParams {
+  const next = { ...getParams(id), ...patch };
+  next.rate = clamp01(next.rate);
+  next.level = clamp01(next.level);
+  params.set(id, next);
+  if (id !== "bird" && id !== "qin") running.get(id)?.apply(next);
+  return next;
+}
 
 function startWaterfall(context: AudioContext): Running {
   const gain = context.createGain();
@@ -95,7 +141,24 @@ function startWaterfall(context: AudioContext): Running {
   spray.start();
   drift.start();
 
-  return { gain, level: 0.26, sources: [source, spray, drift], timers: [], intensity: () => 1 };
+  const apply = (next: VoiceParams): void => {
+    const at = context.currentTime;
+    gain.gain.cancelScheduledValues(at);
+    gain.gain.setTargetAtTime(0.26 * levelScale(next.level), at, 0.08);
+    // More water is brighter and busier, not merely louder.
+    body.frequency.setTargetAtTime(430 + next.rate * 1250, at, 0.2);
+    drift.frequency.setTargetAtTime(0.03 + next.rate * 0.2, at, 0.3);
+    sprayLevel.gain.setTargetAtTime(0.03 + next.rate * 0.2, at, 0.2);
+  };
+
+  return {
+    gain,
+    base: 0.26,
+    sources: [source, spray, drift],
+    timers: [],
+    intensity: () => 1,
+    apply,
+  };
 }
 
 function startStream(context: AudioContext): Running {
@@ -131,7 +194,8 @@ function startStream(context: AudioContext): Running {
   // the tonal, trickling quality that broadband hiss cannot have. Small
   // bubbles ring high and briefly, big ones low and longer.
   const bubble = (): void => {
-    const burst = 1 + Math.floor(Math.random() * 3);
+    const { rate } = getParams("stream");
+    const burst = 1 + Math.floor(Math.random() * (1 + rate * 3));
     for (let i = 0; i < burst; i++) {
       const at = context.currentTime + i * (0.012 + Math.random() * 0.05);
       const size = Math.random();
@@ -153,11 +217,18 @@ function startStream(context: AudioContext): Running {
       voice.start(at);
       voice.stop(at + span + 0.02);
     }
-    timers.push(window.setTimeout(bubble, 55 + Math.random() * 250));
+    timers.push(window.setTimeout(bubble, (55 + Math.random() * 250) / rateScale(rate)));
   };
   timers.push(window.setTimeout(bubble, 120));
 
-  return { gain, level: 0.22, sources: [bed], timers, intensity: () => 1 };
+  const apply = (next: VoiceParams): void => {
+    const at = context.currentTime;
+    gain.gain.cancelScheduledValues(at);
+    gain.gain.setTargetAtTime(0.22 * levelScale(next.level), at, 0.08);
+    bedLevel.gain.setTargetAtTime(0.06 + next.rate * 0.16, at, 0.2);
+  };
+
+  return { gain, base: 0.22, sources: [bed], timers, intensity: () => 1, apply };
 }
 
 function startPine(context: AudioContext): Running {
@@ -193,6 +264,7 @@ function startPine(context: AudioContext): Running {
 
   const grain = (): void => {
     const at = context.currentTime;
+    const { rate } = getParams("tree");
 
     if (strength > 0.02) {
       const span = 0.03 + Math.random() * 0.06;
@@ -222,19 +294,26 @@ function startPine(context: AudioContext): Running {
     // The interval grows as the gust dies. At full strength the grains crowd
     // to about thirty milliseconds apart; by the tail they are five or six a
     // second. Same texture, slowing down.
-    const interval = 20 + (1 - strength) * 200 + Math.random() * 45;
+    const interval = (20 + (1 - strength) * 200 + Math.random() * 45) / rateScale(rate);
     timers.push(window.setTimeout(grain, interval));
   };
 
   const gustArrives = (): void => {
+    const { rate } = getParams("tree");
     strength = Math.min(1, strength + 0.55 + Math.random() * 0.45);
-    timers.push(window.setTimeout(gustArrives, 3400 + Math.random() * 5600));
+    timers.push(window.setTimeout(gustArrives, (3400 + Math.random() * 5600) / (0.4 + rate * 1.6)));
   };
 
   timers.push(window.setTimeout(gustArrives, 250));
   grain();
 
-  return { gain, level: 0.24, sources: [bed], timers, intensity: () => strength };
+  const apply = (next: VoiceParams): void => {
+    const at = context.currentTime;
+    gain.gain.cancelScheduledValues(at);
+    gain.gain.setTargetAtTime(0.24 * levelScale(next.level), at, 0.08);
+  };
+
+  return { gain, base: 0.24, sources: [bed], timers, intensity: () => strength, apply };
 }
 
 const BUILDERS: Record<AmbienceId, (context: AudioContext) => Running> = {
@@ -262,9 +341,11 @@ export function toggleAmbience(id: AmbienceId): boolean {
   }
 
   const started = BUILDERS[id](context);
+  const settings = getParams(id);
   started.gain.gain.setValueAtTime(0, at);
-  started.gain.gain.linearRampToValueAtTime(started.level, at + FADE);
+  started.gain.gain.linearRampToValueAtTime(started.base * levelScale(settings.level), at + FADE);
   running.set(id, started);
+  started.apply(settings);
   return true;
 }
 
@@ -283,33 +364,83 @@ export function voiceLevel(id: AmbienceId): number {
   return running.get(id)?.intensity() ?? 0;
 }
 
+// ── birds ──────────────────────────────────────────────────────────────────
+//
+// Five calls rather than one, because a bird that says the same thing every
+// time is a doorbell. They are not recordings and there is nowhere in this
+// build for a recording to live: each is a different *shape* of pitch in
+// motion, which is most of what distinguishes one species from another to an
+// ear that is not a birdwatcher's.
+
+interface BirdCall {
+  readonly name: string;
+  /** How many syllables, low and high. */
+  readonly syllables: readonly [number, number];
+  /** Starting pitch range, hertz. */
+  readonly base: readonly [number, number];
+  /** Peak of the sweep, and where it lands, as multiples of the start. */
+  readonly peak: number;
+  readonly land: number;
+  /** Syllable length and the silence after it, seconds. */
+  readonly span: readonly [number, number];
+  readonly gap: readonly [number, number];
+}
+
+const BIRD_CALLS: readonly BirdCall[] = [
+  // a bright two-note answer
+  { name: "answer", syllables: [2, 2], base: [2100, 2600], peak: 1.5, land: 0.8, span: [0.09, 0.14], gap: [0.07, 0.13] },
+  // a fast dry chatter
+  { name: "chatter", syllables: [5, 8], base: [2600, 3300], peak: 1.14, land: 0.95, span: [0.03, 0.05], gap: [0.02, 0.05] },
+  // one long descending whistle
+  { name: "whistle", syllables: [1, 1], base: [3000, 3500], peak: 1.06, land: 0.45, span: [0.4, 0.62], gap: [0.2, 0.3] },
+  // a rising trill
+  { name: "trill", syllables: [4, 6], base: [1900, 2300], peak: 1.7, land: 1.35, span: [0.05, 0.08], gap: [0.03, 0.06] },
+  // two low, spaced notes
+  { name: "call", syllables: [2, 3], base: [1300, 1650], peak: 1.28, land: 0.86, span: [0.16, 0.24], gap: [0.18, 0.3] },
+];
+
+let lastCall = -1;
+
+function between(range: readonly [number, number]): number {
+  return range[0] + Math.random() * (range[1] - range[0]);
+}
+
 /**
  * One burst of birdsong.
  *
  * A bird is a pitch moving fast — the note it lands on matters much less than
- * the sweep getting there — so this is an oscillator whose frequency is ramped
- * twice per syllable, with the number of syllables and every interval
- * randomised. It is a one-shot: the bird answers and stops, rather than
- * latching on like the water does.
+ * the sweep getting there — so each syllable is an oscillator ramped twice.
+ * With no argument it picks a call at random but never the one it just used,
+ * so a double-click always brings a different bird.
  */
-export function chirp(): void {
+export function chirp(which?: number): void {
   const context = ensureAudio();
-  const syllables = 2 + Math.floor(Math.random() * 3);
+  const { rate, level } = getParams("bird");
+
+  let index = which ?? Math.floor(Math.random() * BIRD_CALLS.length);
+  if (which === undefined && BIRD_CALLS.length > 1) {
+    while (index === lastCall) index = Math.floor(Math.random() * BIRD_CALLS.length);
+  }
+  lastCall = index;
+
+  const call = BIRD_CALLS[index];
+  const speed = rateScale(rate);
+  const syllables = Math.round(between(call.syllables));
   let at = context.currentTime + 0.02;
 
   for (let i = 0; i < syllables; i++) {
-    const span = 0.085 + Math.random() * 0.07;
-    const base = 2050 + Math.random() * 750;
+    const span = between(call.span) / speed;
+    const base = between(call.base);
 
     const voice = context.createOscillator();
     voice.type = "sine";
     voice.frequency.setValueAtTime(base, at);
-    voice.frequency.exponentialRampToValueAtTime(base * 1.55, at + span * 0.35);
-    voice.frequency.exponentialRampToValueAtTime(base * 0.82, at + span);
+    voice.frequency.exponentialRampToValueAtTime(base * call.peak, at + span * 0.35);
+    voice.frequency.exponentialRampToValueAtTime(base * call.land, at + span);
 
     const envelope = context.createGain();
     envelope.gain.setValueAtTime(0, at);
-    envelope.gain.linearRampToValueAtTime(0.15, at + 0.012);
+    envelope.gain.linearRampToValueAtTime(0.15 * levelScale(level), at + Math.min(0.012, span * 0.2));
     envelope.gain.exponentialRampToValueAtTime(0.0001, at + span);
 
     voice.connect(envelope);
@@ -317,6 +448,9 @@ export function chirp(): void {
     voice.start(at);
     voice.stop(at + span + 0.02);
 
-    at += span + 0.045 + Math.random() * 0.1;
+    at += span + between(call.gap) / speed;
   }
 }
+
+/** How long the flock is busy for, so the wings can beat for the same length. */
+export const BIRD_CALL_COUNT = BIRD_CALLS.length;

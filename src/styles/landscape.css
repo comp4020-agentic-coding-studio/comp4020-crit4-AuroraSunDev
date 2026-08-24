@@ -319,3 +319,87 @@
     animation-duration: 0.22s;
   }
 }
+
+/* ── The control pads ──────────────────────────────────────────────────────
+   One per element, anchored beside the thing it belongs to. Ink on paper like
+   everything else: two axes, a tick at the origin-centre, and a dot. */
+
+.pads {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.pad {
+  position: absolute;
+  width: 6.5rem;
+  height: 6.5rem;
+  translate: -50% -50%;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 320ms ease, visibility 0s linear 320ms;
+  touch-action: none;
+}
+
+.pad[data-shown="true"] {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transition: opacity 320ms ease;
+}
+
+.pad-grid {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  cursor: crosshair;
+}
+
+.pad-axis,
+.pad-arrow,
+.pad-tick {
+  stroke: var(--ink);
+  fill: none;
+  stroke-linecap: round;
+  opacity: 0.42;
+}
+
+.pad-axis {
+  stroke-width: 1.1;
+}
+
+.pad-arrow,
+.pad-tick {
+  stroke-width: 1;
+  opacity: 0.3;
+}
+
+.pad-dot {
+  fill: var(--ink);
+  opacity: 0.62;
+  transition: opacity 160ms ease;
+}
+
+.pad:hover .pad-dot,
+.pad:focus-within .pad-dot {
+  opacity: 0.9;
+}
+
+.pad-name {
+  position: absolute;
+  right: 0;
+  bottom: -0.15rem;
+  font-size: 0.58rem;
+  letter-spacing: 0.14em;
+  text-transform: lowercase;
+  color: var(--ink-gloss);
+  pointer-events: none;
+}
+
+/* A keyboard focus has to be visible on the pad itself, not only on the
+   off-screen sliders that carry the values. */
+.pad:focus-within .pad-grid {
+  outline: 2px solid var(--ink);
+  outline-offset: 4px;
+}

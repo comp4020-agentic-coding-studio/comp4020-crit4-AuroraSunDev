@@ -1,7 +1,16 @@
 import { STRING_KEYS } from "../data/strings";
-import { chirp, isAmbienceActive, toggleAmbience, voiceLevel } from "../lib/ambience";
+import {
+  chirp,
+  getParams,
+  isAmbienceActive,
+  setParams,
+  toggleAmbience,
+  voiceLevel,
+  type ControlId,
+} from "../lib/ambience";
 import { ensureAudio, now, resumeAudio } from "../lib/audio";
 import { pluck } from "../lib/guqin";
+import { OPENING_PHRASE } from "../data/opening-phrase";
 import { appendEvent, asLoop, type NoteEvent } from "../lib/performance";
 import { analyse, replyMotif } from "../lib/zhiyin";
 
@@ -28,6 +37,7 @@ if (stage && strings.length > 0) {
   // Everything played this session, oldest first, capped at a phrase.
   let played: NoteEvent[] = [];
   let loopTimers: number[] = [];
+  let phraseHeld = false;
 
   const zhiyin = document.querySelector<HTMLElement>('[data-testid="zhiyin"]');
   const zhiyinHan = document.querySelector<HTMLElement>('[data-testid="zhiyin-han"]');
@@ -49,6 +59,12 @@ if (stage && strings.length > 0) {
   const ANCHORS: { element: HTMLElement | null; x: number; y: number; dy: number }[] = [
     { element: zhiyinHan, x: 79, y: 18, dy: -20 }, // the empty sky above the two of them
     { element: zhiyinGloss, x: 79, y: 84, dy: 0 }, // the slope below them
+    ...[...document.querySelectorAll<HTMLElement>("[data-pad]")].map((pad) => ({
+      element: pad,
+      x: Number(pad.dataset.padX ?? 80),
+      y: Number(pad.dataset.padY ?? 50),
+      dy: 0,
+    })),
   ];
 
   function placeAnchors(): void {
@@ -90,10 +106,24 @@ if (stage && strings.length > 0) {
   // also the gesture that plays the first note — the spec asks the opening
   // screen to invite the first sound, and swallowing that first touch to "start
   // the audio" would make a liar of it.
+  // The waterfall is on from the start. A browser will not let a page make a
+  // sound before someone has touched it, and the spec asks that the opening
+  // screen invite the *first* sound rather than supply it — so the water is
+  // already falling when you arrive, visibly, and finds its voice on the first
+  // gesture anywhere on the page. Default-on, without claiming a sound the
+  // platform would never have allowed.
+  let audioStarted = false;
+
   function wake(): void {
     ensureAudio();
     resumeAudio();
+    audioStarted = true;
     stage!.dataset.phase = "alive";
+    if (!isAmbienceActive("waterfall")) {
+      toggleAmbience("waterfall");
+      const fall = regions.find((region) => region.dataset.region === "waterfall");
+      if (fall) fall.dataset.sounding = "true";
+    }
   }
 
   document.addEventListener("pointerdown", wake, { capture: true, once: true });
@@ -113,21 +143,45 @@ if (stage && strings.length > 0) {
     loopTimers = [];
   }
 
+  // Until you have played a phrase of your own, the loop is his: an opening in
+  // the manner of 《流水》, rendered through the same string as everything else
+  // rather than played from a file.
+  function currentPhrase(): readonly NoteEvent[] {
+    const mine = asLoop(played);
+    return mine.length >= 3 ? mine : OPENING_PHRASE;
+  }
+
   function startPhraseLoop(): void {
     stopPhraseLoop();
-    const loop = asLoop(played);
+    if (phraseHeld) return;
+
+    const loop = currentPhrase();
     if (loop.length < 3) return;
 
-    const span = loop[loop.length - 1].time + 2.2;
     const run = (): void => {
+      const { rate, level } = getParams("qin");
+      // The pad's rate is the tempo the phrase is taken at, so the schedule has
+      // to be recomputed each time round rather than fixed when it starts.
+      const speed = 0.45 + rate * 1.3;
       for (const note of loop) {
         loopTimers.push(
-          window.setTimeout(() => pluck(note.stringIndex, note.velocity * 0.38), note.time * 1000),
+          window.setTimeout(
+            () => pluck(note.stringIndex, note.velocity * (0.16 + level * 0.62)),
+            (note.time / speed) * 1000,
+          ),
         );
       }
+      const span = (loop[loop.length - 1].time + 2.2) / speed;
       loopTimers.push(window.setTimeout(run, span * 1000));
     };
     run();
+  }
+
+  function togglePhrase(): boolean {
+    phraseHeld = !phraseHeld;
+    if (phraseHeld) stopPhraseLoop();
+    else startPhraseLoop();
+    return !phraseHeld;
   }
 
   function showScene(name: Scene): void {
@@ -228,6 +282,120 @@ if (stage && strings.length > 0) {
     play(button, 0.72);
   });
 
+  // --- the control pads -----------------------------------------------------
+
+  const HIDE_AFTER = 5000;
+  const pads = new Map<string, HTMLElement>();
+  const padTimers = new Map<string, number>();
+
+  function padDot(pad: HTMLElement): SVGCircleElement | null {
+    return pad.querySelector<SVGCircleElement>(".pad-dot");
+  }
+
+  function drawPad(id: string): void {
+    const pad = pads.get(id);
+    const dot = pad ? padDot(pad) : null;
+    if (!pad || !dot) return;
+    const { rate, level } = getParams(id as ControlId);
+    // The grid runs 10…95 across and 5…90 down, and down is louder upward.
+    dot.setAttribute("cx", String(10 + rate * 85));
+    dot.setAttribute("cy", String(90 - level * 85));
+
+    const x = pad.querySelector<HTMLInputElement>(".pad-x");
+    const y = pad.querySelector<HTMLInputElement>(".pad-y");
+    if (x) x.value = String(Math.round(rate * 100));
+    if (y) y.value = String(Math.round(level * 100));
+  }
+
+  function showPad(id: string): void {
+    const pad = pads.get(id);
+    if (!pad) return;
+    const pending = padTimers.get(id);
+    if (pending !== undefined) clearTimeout(pending);
+    padTimers.delete(id);
+    placeAnchors();
+    drawPad(id);
+    pad.dataset.shown = "true";
+  }
+
+  function hidePadSoon(id: string): void {
+    const pad = pads.get(id);
+    if (!pad) return;
+    const pending = padTimers.get(id);
+    if (pending !== undefined) clearTimeout(pending);
+    // Five seconds, and moving onto the pad itself cancels it — otherwise the
+    // control vanishes in the gap between the thing and the thing that adjusts
+    // it, which is the one moment you are certain to be reaching for it.
+    padTimers.set(
+      id,
+      window.setTimeout(() => {
+        pad.dataset.shown = "false";
+        padTimers.delete(id);
+      }, HIDE_AFTER),
+    );
+  }
+
+  for (const pad of document.querySelectorAll<HTMLElement>("[data-pad]")) {
+    const id = pad.dataset.pad;
+    if (!id) continue;
+    pads.set(id, pad);
+    drawPad(id);
+
+    const grid = pad.querySelector<SVGSVGElement>(".pad-grid");
+
+    const setFromPointer = (event: PointerEvent): void => {
+      if (!grid) return;
+      const box = grid.getBoundingClientRect();
+      const rate = (event.clientX - box.left) / box.width;
+      const level = 1 - (event.clientY - box.top) / box.height;
+      setParams(id as ControlId, { rate, level });
+      drawPad(id);
+    };
+
+    grid?.addEventListener("pointerdown", (event) => {
+      grid.setPointerCapture(event.pointerId);
+      setFromPointer(event);
+    });
+    grid?.addEventListener("pointermove", (event) => {
+      if (event.buttons === 0) return;
+      setFromPointer(event);
+    });
+
+    pad.querySelector<HTMLInputElement>(".pad-x")?.addEventListener("input", (event) => {
+      setParams(id as ControlId, { rate: Number((event.target as HTMLInputElement).value) / 100 });
+      drawPad(id);
+    });
+    pad.querySelector<HTMLInputElement>(".pad-y")?.addEventListener("input", (event) => {
+      setParams(id as ControlId, { level: Number((event.target as HTMLInputElement).value) / 100 });
+      drawPad(id);
+    });
+
+    pad.addEventListener("pointerenter", () => showPad(id));
+    pad.addEventListener("pointerleave", () => hidePadSoon(id));
+    pad.addEventListener("focusin", () => showPad(id));
+    pad.addEventListener("focusout", () => hidePadSoon(id));
+  }
+
+  // Boya's pad governs the qin, so approaching either the man or his
+  // instrument brings it out.
+  const PAD_FOR: Record<string, string> = {
+    waterfall: "waterfall",
+    stream: "stream",
+    tree: "tree",
+    bird: "bird",
+    boya: "qin",
+    qin: "qin",
+  };
+
+  for (const region of regions) {
+    const padId = PAD_FOR[region.dataset.region ?? ""];
+    if (!padId) continue;
+    region.addEventListener("pointerenter", () => showPad(padId));
+    region.addEventListener("pointerleave", () => hidePadSoon(padId));
+    region.addEventListener("focus", () => showPad(padId));
+    region.addEventListener("blur", () => hidePadSoon(padId));
+  }
+
   // --- what moves -----------------------------------------------------------
 
   // This loop publishes four numbers and draws nothing. Everything visual is
@@ -252,8 +420,11 @@ if (stage && strings.length > 0) {
     const elapsed = Math.min(Math.max(stamp - lastFrame, 0), 100) / 1000;
     lastFrame = stamp;
 
-    if (isAmbienceActive("waterfall")) flow.waterfall += elapsed * 34;
-    if (isAmbienceActive("stream")) flow.stream += elapsed * 9;
+    // Before the first gesture the water is running with the sound still to
+    // come, so the visual has to know it is on without asking the audio.
+    const falling = isAmbienceActive("waterfall") || !audioStarted;
+    if (falling) flow.waterfall += elapsed * (24 + getParams("waterfall").rate * 34);
+    if (isAmbienceActive("stream")) flow.stream += elapsed * (5 + getParams("stream").rate * 12);
 
     // The needles bend on the same gust that is making the noise, rather than
     // on a private loop that merely looks like wind.
@@ -264,7 +435,7 @@ if (stage && strings.length > 0) {
     stage!.style.setProperty("--stream-flow", flow.stream.toFixed(2));
     stage!.style.setProperty("--leaf-sway", (Math.sin(flow.sway) * gust).toFixed(4));
 
-    if (isAmbienceActive("waterfall") || isAmbienceActive("stream") || gust > 0.02) {
+    if (falling || isAmbienceActive("stream") || gust > 0.02) {
       rafId = requestAnimationFrame(frame);
     } else {
       rafId = null;
@@ -280,6 +451,9 @@ if (stage && strings.length > 0) {
     rafId = requestAnimationFrame(frame);
   }
 
+  // The water is falling on arrival, so the loop starts with the page.
+  startFlow();
+
   reduceMotion.addEventListener("change", () => {
     if (reduceMotion.matches && rafId !== null) {
       cancelAnimationFrame(rafId);
@@ -294,8 +468,17 @@ if (stage && strings.length > 0) {
   function activateRegion(region: SVGGElement): void {
     const id = region.dataset.region;
 
-    if (id === "boya") {
+    if (id === "qin") {
       showScene("guqin");
+      return;
+    }
+
+    if (id === "boya") {
+      // He holds the music, or lets it go on. Not a transport button drawn on
+      // the page — the man himself.
+      const playing = togglePhrase();
+      if (playing) region.dataset.sounding = "true";
+      else delete region.dataset.sounding;
       return;
     }
 
@@ -325,6 +508,8 @@ if (stage && strings.length > 0) {
     }
 
     if (id === "bird") {
+      // chirp() never repeats the call it just used, so clicking twice already
+      // brings two different birds.
       chirp();
       // No latched state: the bird answers once and stops. Marking it as
       // sounding for the length of the call is the only way to see that the
@@ -350,6 +535,18 @@ if (stage && strings.length > 0) {
 
   for (const region of regions) {
     region.addEventListener("click", () => activateRegion(region));
+
+    if (region.dataset.region === "bird") {
+      // A second bird answers the first. Different call, because chirp() will
+      // not repeat itself, and offset so the two overlap the way they do.
+      region.addEventListener("dblclick", () => {
+        window.setTimeout(() => {
+          chirp();
+          region.dataset.sounding = "true";
+          window.setTimeout(() => delete region.dataset.sounding, 900);
+        }, 180 + Math.random() * 260);
+      });
+    }
 
     // role="button" makes a group announce correctly and tabindex makes it
     // focusable, but neither makes it answer the keyboard — that part is only

@@ -34,11 +34,23 @@ import boyaAndZiqi from "../assets/BoyaAndZiqi.png";
 
 const REGIONS = [
   { id: "waterfall", label: "The waterfall — hear it fall", hit: "24,29 17,34" },
-  { id: "stream", label: "The stream — hear it run", hit: "0,60 160,28" },
+  { id: "stream", label: "The stream — hear it run", hit: "0,64 160,24" },
   { id: "tree", label: "The pine — hear the wind in it", hit: "106,24 46,34" },
   { id: "bird", label: "The bird — hear it sing", hit: "98,10 28,16" },
-  { id: "boya", label: "Boya, who is playing — sit down at the qin", hit: "60,59 17,16" },
+  { id: "boya", label: "Boya, who is playing — hold the music, or let it go on", hit: "63,57 14,10" },
+  { id: "qin", label: "The qin — sit down behind it and play", hit: "62,67 17,7" },
   { id: "ziqi", label: "Zhong Ziqi, who is listening — hear what he heard", hit: "85,59 17,16" },
+] as const;
+
+// A pad for each thing that can be turned up or slowed down, anchored beside
+// the element it belongs to rather than parked in a corner: the control should
+// be found by looking at the thing, not by looking for a control panel.
+const CONTROLS = [
+  { id: "waterfall", name: "Waterfall", fast: "more water", x: 47, y: 42 },
+  { id: "stream", name: "Stream", fast: "faster current", x: 19, y: 86 },
+  { id: "tree", name: "Pine", fast: "stronger wind", x: 133, y: 64 },
+  { id: "bird", name: "Bird", fast: "quicker calls", x: 108, y: 30 },
+  { id: "qin", name: "Qin", fast: "quicker phrase", x: 46, y: 79 },
 ] as const;
 
 function hitRect(hit: string): { x: number; y: number; width: number; height: number } {
@@ -51,7 +63,7 @@ function hitRect(hit: string): { x: number; y: number; width: number; height: nu
 /** The soft bloom that sits under a region, sized from its hit area. */
 function breathOval(hit: string): { cx: number; cy: number; rx: number; ry: number } {
   const { x, y, width, height } = hitRect(hit);
-  return { cx: x + width / 2, cy: y + height / 2, rx: width * 0.62, ry: height * 0.62 };
+  return { cx: x + width / 2, cy: y + height / 2, rx: Math.min(width * 0.62, 16), ry: Math.min(height * 0.62, 14) };
 }
 ---
 
@@ -421,35 +433,35 @@ function breathOval(hit: string): { cx: number; cy: number; rx: number; ry: numb
         <g class="stream-water" filter="url(#water-soft)">
           <path
             class="stream-channel"
-            d="M27,59.2 C36,58.7 46,59.6 55,61.4 C64,63.1 72,64.3 81,64.1 C90,63.9 99,65.8 107.5,69.2 C116.5,73 127,78.2 138,82.8 L160,89.4 L160,92.4 C138,85.8 126.5,80.6 116.5,75.8 C107,71.4 98,68.8 89,67.4 C80,66 71,66.6 62,65.2 C52,63.6 41,61.8 26,61.4 Z"
+            d="M30,61.8 C38,61.4 47,61.9 56,63.2 C64,64.6 72,65.6 81,65.4 C90,65.2 99,67 107.5,70.3 C116.5,74 127,79 138,83.4 L160,89.8 L160,92.6 C138,86.4 126.5,81.4 116.5,76.8 C107,72.5 98,70 89,68.7 C80,67.4 71,67.9 62,66.5 C52,65 41,63.6 29,63.9 Z"
           />
           <path
             class="stream-channel"
-            d="M27.4,60 C23.6,62.2 19.4,64.4 15.6,67.6 C11.4,71.2 6.8,75.4 3,78.6 C2,79.4 1,80.4 0.4,81.2 L0.4,83.8 C1.6,82.6 2.8,81.4 4.2,80.2 C8.2,76.8 12.6,72.6 16.8,69 C20.6,65.8 24.6,63.6 28.6,61.6 Z"
+            d="M29.6,62.4 C25.4,64.2 21,66.4 17,69.4 C12.6,72.8 7.8,76.8 3.8,80 C2.6,80.9 1.4,81.9 0.4,82.7 L0.4,85.2 C1.8,84 3.2,82.8 4.8,81.6 C8.8,78.4 13.4,74.4 17.8,71 C21.8,67.9 26,65.9 30.4,64.2 Z"
           />
         </g>
         <g class="stream-banks" stroke="#4f4f4f" fill="none" stroke-linecap="round" opacity="0.26">
-          <path d="M33,58.9 C39,58.7 44,59.2 48,60.2" stroke-width="0.13" />
-          <path d="M61,62.4 C67,63.4 73,64.1 78,64.1" stroke-width="0.12" />
-          <path d="M94,64.8 C99,66.2 104,68.2 108,70.4" stroke-width="0.12" />
-          <path d="M122,76.4 C128,79 133,81.2 138,83" stroke-width="0.11" />
-          <path d="M40,61.9 C47,62.4 54,63.2 60,64.2" stroke-width="0.11" />
-          <path d="M74,66.2 C80,66.6 86,67 91,67.8" stroke-width="0.1" />
-          <path d="M104,70.8 C110,73.2 116,76 121,78.6" stroke-width="0.1" />
-          <path d="M18,66.2 C15,68.4 12,71 9.4,73.4" stroke-width="0.12" />
-          <path d="M11,74.6 C8.4,76.8 5.8,79 3.6,80.8" stroke-width="0.1" />
+          <path d="M35,61.6 C40,61.4 45,61.8 49,62.6" stroke-width="0.13" />
+          <path d="M61,63.7 C67,64.7 73,65.4 78,65.4" stroke-width="0.12" />
+          <path d="M94,66.2 C99,67.5 104,69.4 108,71.6" stroke-width="0.12" />
+          <path d="M122,77.6 C128,80.1 133,82.2 138,84" stroke-width="0.11" />
+          <path d="M41,64.2 C48,64.7 55,65.4 61,66.3" stroke-width="0.11" />
+          <path d="M74,67.5 C80,67.9 86,68.3 91,69" stroke-width="0.1" />
+          <path d="M104,72 C110,74.3 116,77 121,79.5" stroke-width="0.1" />
+          <path d="M20,68.6 C17,70.8 14,73.4 11.4,75.8" stroke-width="0.12" />
+          <path d="M13,77 C10.4,79.2 7.8,81.4 5.6,83.2" stroke-width="0.1" />
         </g>
         <!-- A few ripples on the surface, dark on the pale water. -->
         <g class="stream-lines" stroke="#4a4a4a" fill="none" stroke-linecap="round">
-          <path d="M36,60.2 C42,60 48,60.6 53,61.8" stroke-width="0.18" opacity="0.28" />
-          <path d="M58,63 C64,64 70,64.6 76,64.6" stroke-width="0.16" opacity="0.26" />
-          <path d="M83,65 C89,65.4 95,66.8 100,68.6" stroke-width="0.17" opacity="0.25" />
-          <path d="M106,71 C112,73.6 118,76.4 124,79" stroke-width="0.15" opacity="0.22" />
-          <path d="M130,81.4 C136,83.6 142,85.8 148,87.6" stroke-width="0.13" opacity="0.19" />
-          <path d="M46,62.4 C52,62.8 58,63.6 63,64.4" stroke-width="0.12" opacity="0.2" />
-          <path d="M88,67.4 C94,68.6 100,70.4 105,72.4" stroke-width="0.12" opacity="0.18" />
-          <path d="M22,64.4 C18.6,66.4 15.2,68.8 12.2,71.2" stroke-width="0.14" opacity="0.22" />
-          <path d="M14,70.4 C11,72.8 8,75.4 5.4,77.6" stroke-width="0.12" opacity="0.18" />
+          <path d="M38,62.8 C44,62.6 50,63.1 55,64.2" stroke-width="0.18" opacity="0.28" />
+          <path d="M58,64.3 C64,65.2 70,65.8 76,65.8" stroke-width="0.16" opacity="0.26" />
+          <path d="M83,66.3 C89,66.7 95,68 100,69.8" stroke-width="0.17" opacity="0.25" />
+          <path d="M106,72.2 C112,74.7 118,77.4 124,79.9" stroke-width="0.15" opacity="0.22" />
+          <path d="M130,82.3 C136,84.4 142,86.5 148,88.3" stroke-width="0.13" opacity="0.19" />
+          <path d="M47,64.7 C53,65.1 59,65.8 64,66.5" stroke-width="0.12" opacity="0.2" />
+          <path d="M88,68.7 C94,69.8 100,71.5 105,73.5" stroke-width="0.12" opacity="0.18" />
+          <path d="M24,66.8 C20.6,68.8 17.2,71.2 14.2,73.6" stroke-width="0.14" opacity="0.22" />
+          <path d="M16,72.8 C13,75.2 10,77.8 7.4,80" stroke-width="0.12" opacity="0.18" />
         </g>
       </g>
 
@@ -465,6 +477,7 @@ function breathOval(hit: string): { cx: number; cy: number; rx: number; ry: numb
            around the hill. -->
       <image
         class="ink-bank"
+        pointer-events="none"
         href={boyaAndZiqi.src}
         x="0"
         y="43.9"
@@ -491,14 +504,26 @@ function breathOval(hit: string): { cx: number; cy: number; rx: number; ry: numb
 
       <g
         class="ink-region"
-        data-part="ziqi"
-        data-region="ziqi"
+        data-part="qin"
+        data-region="qin"
         role="button"
         tabindex="0"
         aria-label={REGIONS[5].label}
       >
         <rect {...hitRect(REGIONS[5].hit)} class="region-hit" />
-        <ellipse class="region-breath" {...breathOval(REGIONS[5].hit)} style="animation-delay: 2.8s" />
+        <ellipse class="region-breath" {...breathOval(REGIONS[5].hit)} style="animation-delay: 3.4s" />
+      </g>
+
+      <g
+        class="ink-region"
+        data-part="ziqi"
+        data-region="ziqi"
+        role="button"
+        tabindex="0"
+        aria-label={REGIONS[6].label}
+      >
+        <rect {...hitRect(REGIONS[6].hit)} class="region-hit" />
+        <ellipse class="region-breath" {...breathOval(REGIONS[6].hit)} style="animation-delay: 2.8s" />
       </g>
 
       <!-- ── the bird ────────────────────────────────────────────────────── -->
@@ -527,6 +552,59 @@ function breathOval(hit: string): { cx: number; cy: number; rx: number; ry: numb
       <!-- Paper grain, over everything, so the whites are not flat screen white. -->
       <rect class="paper-grain" x="0" y="0" width="160" height="100" filter="url(#grain)" />
     </svg>
+  </div>
+
+  <!-- One small ink coordinate system per element: left–right is how fast or
+       hard the thing goes, up–down is how loud. Semi-transparent, and only
+       there while you are near the thing it belongs to.
+
+       The visible pad is drawn in SVG and dragged with a pointer; the two range
+       inputs beside it are the same two values, kept in sync and reachable by
+       keyboard and screen reader. A dot you can only drag is not a control
+       everybody has. -->
+  <div class="pads" data-testid="pads">
+    {
+      CONTROLS.map((control) => (
+        <div
+          class="pad"
+          data-pad={control.id}
+          data-pad-x={control.x}
+          data-pad-y={control.y}
+          data-shown="false"
+          role="group"
+          aria-label={`${control.name} controls`}
+        >
+          <svg class="pad-grid" viewBox="0 0 100 100" aria-hidden="true" focusable="false">
+            <line class="pad-axis" x1="10" y1="90" x2="95" y2="90" />
+            <line class="pad-axis" x1="10" y1="5" x2="10" y2="90" />
+            <path class="pad-arrow" d="M95,90 L90,87 M95,90 L90,93" />
+            <path class="pad-arrow" d="M10,5 L7,10 M10,5 L13,10" />
+            <line class="pad-tick" x1="52.5" y1="88" x2="52.5" y2="92" />
+            <line class="pad-tick" x1="8" y1="47.5" x2="12" y2="47.5" />
+            <circle class="pad-dot" cx="52.5" cy="47.5" r="4.5" />
+          </svg>
+          <span class="pad-name" aria-hidden="true">{control.name}</span>
+          <input
+            class="sr-only pad-x"
+            type="range"
+            min="0"
+            max="100"
+            value="50"
+            data-testid={`pad-${control.id}-rate`}
+            aria-label={`${control.name}: ${control.fast} to the right`}
+          />
+          <input
+            class="sr-only pad-y"
+            type="range"
+            min="0"
+            max="100"
+            value="50"
+            data-testid={`pad-${control.id}-level`}
+            aria-label={`${control.name}: volume`}
+          />
+        </div>
+      ))
+    }
   </div>
 
   <!-- What Ziqi says, written into the empty part of the paper the way a
