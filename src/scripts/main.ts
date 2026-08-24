@@ -56,13 +56,14 @@ if (stage && strings.length > 0) {
   // `dy` is a nudge in screen pixels rather than picture units: it is a
   // typographic adjustment to where the line sits, not a change to the place in
   // the painting it is pointing at, so it should not scale with the artwork.
-  const ANCHORS: { element: HTMLElement | null; x: number; y: number; dy: number }[] = [
-    { element: zhiyinHan, x: 79, y: 18, dy: -20 }, // the empty sky above the two of them
-    { element: zhiyinGloss, x: 79, y: 84, dy: 0 }, // the slope below them
+  const ANCHORS: { element: HTMLElement | null; x: number; y: number; dx: number; dy: number }[] = [
+    { element: zhiyinHan, x: 79, y: 18, dx: 0, dy: -20 }, // the empty sky above the two of them
+    { element: zhiyinGloss, x: 79, y: 84, dx: 0, dy: 0 }, // the slope below them
     ...[...document.querySelectorAll<HTMLElement>("[data-pad]")].map((pad) => ({
       element: pad,
       x: Number(pad.dataset.padX ?? 80),
       y: Number(pad.dataset.padY ?? 50),
+      dx: Number(pad.dataset.padDx ?? 0),
       dy: 0,
     })),
   ];
@@ -76,7 +77,7 @@ if (stage && strings.length > 0) {
     for (const anchor of ANCHORS) {
       if (!anchor.element) continue;
       const point = new DOMPoint(anchor.x, anchor.y).matrixTransform(matrix);
-      let left = point.x - frame.left;
+      let left = point.x - frame.left + anchor.dx;
       let top = point.y - frame.top + anchor.dy;
 
       // A pad is centred on its anchor, so one anchored above the birds — who
