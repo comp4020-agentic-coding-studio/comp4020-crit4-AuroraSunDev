@@ -43,9 +43,12 @@ if (stage && strings.length > 0) {
   // labelling as soon as the window changes proportion — which is exactly what
   // happens between the two viewports this gets marked at. Asking the SVG for
   // its own transform is the only way to stay welded to the drawing.
-  const ANCHORS: { element: HTMLElement | null; x: number; y: number }[] = [
-    { element: zhiyinHan, x: 79, y: 18 }, // the empty sky above the two of them
-    { element: zhiyinGloss, x: 79, y: 84 }, // the slope below them
+  // `dy` is a nudge in screen pixels rather than picture units: it is a
+  // typographic adjustment to where the line sits, not a change to the place in
+  // the painting it is pointing at, so it should not scale with the artwork.
+  const ANCHORS: { element: HTMLElement | null; x: number; y: number; dy: number }[] = [
+    { element: zhiyinHan, x: 79, y: 18, dy: -20 }, // the empty sky above the two of them
+    { element: zhiyinGloss, x: 79, y: 84, dy: 0 }, // the slope below them
   ];
 
   function placeAnchors(): void {
@@ -58,7 +61,7 @@ if (stage && strings.length > 0) {
       if (!anchor.element) continue;
       const point = new DOMPoint(anchor.x, anchor.y).matrixTransform(matrix);
       anchor.element.style.left = `${point.x - frame.left}px`;
-      anchor.element.style.top = `${point.y - frame.top}px`;
+      anchor.element.style.top = `${point.y - frame.top + anchor.dy}px`;
     }
   }
 

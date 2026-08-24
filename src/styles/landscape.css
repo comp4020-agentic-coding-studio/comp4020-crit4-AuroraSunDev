@@ -144,8 +144,10 @@
   color: var(--ink);
 }
 
-/* On the slope, so it is paper-coloured on ink rather than the other way
-   round. This is the one place in the prototype where the type is light. */
+/* On the slope. This was pale type when the bank was drawn almost black; the
+   painted hill that replaced it is mid-grey, where paper-coloured text falls to
+   about 2.6:1 and stops being readable. Ink on the hill is 6.5:1. The colour
+   was never the point — the contrast was. */
 .zhiyin-gloss {
   translate: -50% 0;
   max-width: min(26rem, 46vw);
@@ -154,7 +156,7 @@
   font-style: italic;
   line-height: 1.5;
   letter-spacing: 0.03em;
-  color: rgb(245 245 245 / 88%);
+  color: var(--ink);
 }
 
 @media (prefers-reduced-motion: reduce) {
