@@ -3,19 +3,42 @@
    scene gives is that its own ink goes darker, which is why there are no boxes,
    no labels and no outlines sitting on top of the picture. */
 
+/* The page is the paper. Not a picture framed inside a document with margins
+   around it — the painting bleeds to all four edges and the inscription and the
+   scene switch sit on it, the way a seal and a colophon sit on the scroll
+   itself. Everything below exists to stop anything putting a border back. */
 .landscape {
   position: relative;
-  display: grid;
-  place-items: center;
   min-height: 100dvh;
 }
 
 .landscape-frame {
-  width: 100%;
-  height: 100dvh;
-  padding: clamp(0.5rem, 2vw, 2rem);
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
 }
 
+/* A phone is 0.46 wide for every 1 tall; this painting is 1.6. There is no
+   setting that both fills that screen and keeps a horizontal composition
+   intact — cropping to fill loses the waterfall, both figures, the pine and
+   the bird, which is four of the six things you can play. So in portrait the
+   ink takes a band and the *paper* still runs to all four edges, because the
+   paper and the page background are the same colour and the same thing. It is
+   still one canvas; there is simply more of it unpainted, which is not a
+   letterbox but 留白. */
+@media (orientation: portrait) {
+  .landscape-frame {
+    inset: 0 0 auto;
+    top: 50%;
+    translate: 0 -50%;
+    aspect-ratio: 160 / 100;
+    height: auto;
+  }
+}
+
+/* `slice` rather than `meet`: cover the viewport and crop, instead of fitting
+   inside it and leaving bars. The composition keeps its top and bottom fifth
+   clear of anything that matters, which is the room this costs. */
 .landscape-art {
   width: 100%;
   height: 100%;
