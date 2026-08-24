@@ -108,53 +108,57 @@
   fill: url(#fall-emerge);
 }
 
-/* Zhong Ziqi's reply, set into the empty upper-left of the paper — where a
-   colophon goes, and where this composition has the most room. Vertical, so it
-   reads as writing on the painting rather than as a caption under it. */
+/* Zhong Ziqi's reply, in two halves that sit in different parts of the
+   painting: what he says goes into the blank sky above the two of them, and the
+   reading of it appears on the dark slope below, where it is pale text on ink.
+   Both are pinned to the artwork by main.ts rather than by percentages —
+   the painting is scaled to cover the viewport and cropped, so the same viewBox
+   coordinate lands somewhere different at every aspect ratio, and a percentage
+   would slide off the figures the moment the window changed shape. */
 .zhiyin {
   position: absolute;
-  top: clamp(3rem, 12%, 8rem);
-  left: clamp(1rem, 7%, 6rem);
+  inset: 0;
   z-index: 2;
-  display: flex;
-  align-items: flex-start;
-  gap: 0.9rem;
-  margin: 0;
   pointer-events: none;
   opacity: 0;
-  translate: 0 -0.6rem;
-  transition: opacity 900ms ease, translate 900ms ease;
+  transition: opacity 900ms ease;
 }
 
 .zhiyin[data-shown="true"] {
   opacity: 1;
-  translate: 0 0;
+}
+
+.zhiyin-han,
+.zhiyin-gloss {
+  position: absolute;
+  margin: 0;
 }
 
 .zhiyin-han {
   writing-mode: vertical-rl;
-  margin: 0;
+  translate: -50% 0;
   font-family: var(--han);
-  font-size: clamp(1rem, 1.8vw, 1.45rem);
-  letter-spacing: 0.26em;
+  font-size: clamp(1.05rem, 1.9vw, 1.55rem);
+  letter-spacing: 0.28em;
   line-height: 1.5;
   color: var(--ink);
 }
 
+/* On the slope, so it is paper-coloured on ink rather than the other way
+   round. This is the one place in the prototype where the type is light. */
 .zhiyin-gloss {
-  writing-mode: horizontal-tb;
-  max-width: 9rem;
-  margin: 0.2rem 0 0;
-  font-size: 0.68rem;
+  translate: -50% 0;
+  max-width: min(26rem, 46vw);
+  text-align: center;
+  font-size: clamp(0.95rem, 1.4vw, 1.18rem);
   font-style: italic;
   line-height: 1.5;
-  letter-spacing: 0.05em;
-  color: var(--ink-gloss);
+  letter-spacing: 0.03em;
+  color: rgb(245 245 245 / 88%);
 }
 
 @media (prefers-reduced-motion: reduce) {
   .zhiyin {
     transition-duration: 1ms;
-    translate: 0 0;
   }
 }

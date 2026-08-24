@@ -68,15 +68,20 @@ body {
 
 /* The inscription: on a scroll the title sits in the margin in a vertical
    column, with the reading of it smaller and quieter underneath. */
+/* Title and reading, both running down the margin as columns. The English is
+   set sideways rather than upright: rotating Latin is what vertical Chinese
+   typesetting does with it, and stacking the letters individually would be the
+   wrong answer to the same question. Chinese first, so the English column ends
+   up on its right. */
 .inscription {
   position: fixed;
   top: var(--edge);
   right: var(--edge);
   z-index: 3;
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 0.7rem;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 0.5rem;
   margin: 0;
   font-weight: 400;
   pointer-events: none;
@@ -91,12 +96,11 @@ body {
 }
 
 .inscription-gloss {
-  writing-mode: horizontal-tb;
-  max-width: 7.5rem;
-  text-align: right;
-  font-size: 0.66rem;
-  line-height: 1.45;
-  letter-spacing: 0.06em;
+  writing-mode: vertical-rl;
+  text-orientation: sideways;
+  font-size: clamp(0.82rem, 1.15vw, 0.98rem);
+  line-height: 1.4;
+  letter-spacing: 0.04em;
   font-style: italic;
   color: var(--ink-gloss);
 }

@@ -32,6 +32,38 @@ if (stage && strings.length > 0) {
   const zhiyin = document.querySelector<HTMLElement>('[data-testid="zhiyin"]');
   const zhiyinHan = document.querySelector<HTMLElement>('[data-testid="zhiyin-han"]');
   const zhiyinGloss = document.querySelector<HTMLElement>('[data-testid="zhiyin-gloss"]');
+  const art = document.querySelector<SVGSVGElement>(".landscape-art");
+  const landscape = document.querySelector<HTMLElement>(".landscape");
+
+  // Text pinned to places in the painting rather than to places on the screen.
+  //
+  // The artwork is scaled to cover the viewport and cropped to fit, so a given
+  // viewBox coordinate lands at a different screen position for every window
+  // shape. Anything positioned in percentages slides off the thing it is
+  // labelling as soon as the window changes proportion — which is exactly what
+  // happens between the two viewports this gets marked at. Asking the SVG for
+  // its own transform is the only way to stay welded to the drawing.
+  const ANCHORS: { element: HTMLElement | null; x: number; y: number }[] = [
+    { element: zhiyinHan, x: 79, y: 18 }, // the empty sky above the two of them
+    { element: zhiyinGloss, x: 79, y: 84 }, // the slope below them
+  ];
+
+  function placeAnchors(): void {
+    if (!art || !landscape) return;
+    const matrix = art.getScreenCTM();
+    if (!matrix) return;
+
+    const frame = landscape.getBoundingClientRect();
+    for (const anchor of ANCHORS) {
+      if (!anchor.element) continue;
+      const point = new DOMPoint(anchor.x, anchor.y).matrixTransform(matrix);
+      anchor.element.style.left = `${point.x - frame.left}px`;
+      anchor.element.style.top = `${point.y - frame.top}px`;
+    }
+  }
+
+  window.addEventListener("resize", placeAnchors);
+  placeAnchors();
 
   const keyToString = new Map<string, number>();
   for (const [index, keys] of STRING_KEYS.entries()) {
@@ -199,6 +231,10 @@ if (stage && strings.length > 0) {
       if (zhiyin && zhiyinHan && zhiyinGloss) {
         zhiyinHan.textContent = reading.line.han;
         zhiyinGloss.textContent = reading.line.gloss;
+        // Re-anchor before showing: the window may have changed shape while the
+        // reply was hidden, and a stale position would put the line in the sky
+        // above nobody.
+        placeAnchors();
         zhiyin.dataset.shown = "true";
       }
 
