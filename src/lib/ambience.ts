@@ -71,8 +71,13 @@ export function getParams(id: ControlId): VoiceParams {
   return params.get(id) ?? { ...CENTRE };
 }
 
-/** Loudness multiplier, arranged so that the middle of the pad is unity. */
-function levelScale(level: number): number {
+/**
+ * Loudness multiplier, arranged so that the middle of the pad is unity.
+ *
+ * Exported because the qin uses the same curve for its own pad: one shape for
+ * "what does the middle of this axis mean" everywhere it is asked.
+ */
+export function levelScale(level: number): number {
   return 0.1 + level * 1.8;
 }
 
@@ -144,7 +149,9 @@ function startWaterfall(context: AudioContext): Running {
   const apply = (next: VoiceParams): void => {
     const at = context.currentTime;
     gain.gain.cancelScheduledValues(at);
-    gain.gain.setTargetAtTime(0.26 * levelScale(next.level), at, 0.08);
+    // Was 0.26 — the fall was the loudest thing in the picture even at the
+    // centre of its own pad, and it sits behind everything else in the scene.
+    gain.gain.setTargetAtTime(0.16 * levelScale(next.level), at, 0.08);
     // More water is brighter and busier, not merely louder.
     body.frequency.setTargetAtTime(430 + next.rate * 1250, at, 0.2);
     drift.frequency.setTargetAtTime(0.03 + next.rate * 0.2, at, 0.3);
@@ -153,7 +160,7 @@ function startWaterfall(context: AudioContext): Running {
 
   return {
     gain,
-    base: 0.26,
+    base: 0.16,
     sources: [source, spray, drift],
     timers: [],
     intensity: () => 1,

@@ -119,10 +119,10 @@ if (stage && strings.length > 0) {
   // also the gesture that plays the first note — the spec asks the opening
   // screen to invite the first sound, and swallowing that first touch to "start
   // the audio" would make a liar of it.
-  // The waterfall is on from the start. A browser will not let a page make a
+  // The stream is on from the start. A browser will not let a page make a
   // sound before someone has touched it, and the spec asks that the opening
   // screen invite the *first* sound rather than supply it — so the water is
-  // already falling when you arrive, visibly, and finds its voice on the first
+  // already moving when you arrive, visibly, and finds its voice on the first
   // gesture anywhere on the page. Default-on, without claiming a sound the
   // platform would never have allowed.
   let audioStarted = false;
@@ -132,10 +132,10 @@ if (stage && strings.length > 0) {
     resumeAudio();
     audioStarted = true;
     stage!.dataset.phase = "alive";
-    if (!isAmbienceActive("waterfall")) {
-      toggleAmbience("waterfall");
-      const fall = regions.find((region) => region.dataset.region === "waterfall");
-      if (fall) fall.dataset.sounding = "true";
+    if (!isAmbienceActive("stream")) {
+      toggleAmbience("stream");
+      const brook = regions.find((region) => region.dataset.region === "stream");
+      if (brook) brook.dataset.sounding = "true";
     }
   }
 
@@ -172,16 +172,16 @@ if (stage && strings.length > 0) {
     if (loop.length < 3) return;
 
     const run = (): void => {
-      const { rate, level } = getParams("qin");
+      const { rate } = getParams("qin");
       // The pad's rate is the tempo the phrase is taken at, so the schedule has
       // to be recomputed each time round rather than fixed when it starts.
+      // Loudness is pluck()'s own job now — it reads the qin pad directly, so
+      // every note it makes (this loop, a manual pluck, Ziqi's reply) answers
+      // to the same volume control.
       const speed = 0.45 + rate * 1.3;
       for (const note of loop) {
         loopTimers.push(
-          window.setTimeout(
-            () => pluck(note.stringIndex, note.velocity * (0.16 + level * 0.62)),
-            (note.time / speed) * 1000,
-          ),
+          window.setTimeout(() => pluck(note.stringIndex, note.velocity), (note.time / speed) * 1000),
         );
       }
       const span = (loop[loop.length - 1].time + 2.2) / speed;
@@ -205,6 +205,10 @@ if (stage && strings.length > 0) {
       // to change anyway.
       stopPhraseLoop();
       if (zhiyin) zhiyin.dataset.shown = "false";
+      // Each visit to the qin starts a fresh phrase — the newest performance
+      // replaces the last rather than piling onto it, so the buffer is cleared
+      // the moment you sit down rather than kept rolling across visits.
+      played = [];
     } else {
       startPhraseLoop();
     }
@@ -439,11 +443,11 @@ if (stage && strings.length > 0) {
     const elapsed = Math.min(Math.max(stamp - lastFrame, 0), 100) / 1000;
     lastFrame = stamp;
 
-    // Before the first gesture the water is running with the sound still to
+    // Before the first gesture the stream is running with the sound still to
     // come, so the visual has to know it is on without asking the audio.
-    const falling = isAmbienceActive("waterfall") || !audioStarted;
-    if (falling) flow.waterfall += elapsed * (24 + getParams("waterfall").rate * 34);
-    if (isAmbienceActive("stream")) flow.stream += elapsed * (5 + getParams("stream").rate * 12);
+    const streaming = isAmbienceActive("stream") || !audioStarted;
+    if (streaming) flow.stream += elapsed * (5 + getParams("stream").rate * 12);
+    if (isAmbienceActive("waterfall")) flow.waterfall += elapsed * (24 + getParams("waterfall").rate * 34);
 
     // The needles bend on the same gust that is making the noise, rather than
     // on a private loop that merely looks like wind.
@@ -454,7 +458,7 @@ if (stage && strings.length > 0) {
     stage!.style.setProperty("--stream-flow", flow.stream.toFixed(2));
     stage!.style.setProperty("--leaf-sway", (Math.sin(flow.sway) * gust).toFixed(4));
 
-    if (falling || isAmbienceActive("stream") || gust > 0.02) {
+    if (streaming || isAmbienceActive("waterfall") || gust > 0.02) {
       rafId = requestAnimationFrame(frame);
     } else {
       rafId = null;

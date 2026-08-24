@@ -50,7 +50,10 @@ const CONTROLS = [
   { id: "stream", name: "Stream", fast: "faster current", x: 20, y: 71, dx: 0 },
   { id: "tree", name: "Pine", fast: "stronger wind", x: 128, y: 60, dx: 0 },
   { id: "bird", name: "Bird", fast: "quicker calls", x: 112, y: 5, dx: -25 },
-  { id: "qin", name: "Qin", fast: "quicker phrase", x: 46, y: 79, dx: 0 },
+  // Beside Boya rather than on the instrument itself — his hit rect runs
+  // roughly x63–77, y57–67, so this sits just to his left and a little lower,
+  // where the old anchor (down near the far bank) never actually landed.
+  { id: "qin", name: "Qin", fast: "quicker phrase", x: 55, y: 72, dx: 0 },
 ] as const;
 
 function hitRect(hit: string): { x: number; y: number; width: number; height: number } {
