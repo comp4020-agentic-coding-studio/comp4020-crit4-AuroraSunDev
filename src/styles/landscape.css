@@ -162,3 +162,50 @@
     transition-duration: 1ms;
   }
 }
+
+/* The stream is the page showing through the wash, exactly as the fall is the
+   page showing through the cliff — the same idea applied twice, which is why
+   they read as the same substance. */
+.stream-channel {
+  fill: var(--paper);
+  opacity: 0.92;
+}
+
+/* The breath under anything you can touch. The painting draws no controls at
+   all, so this is its entire affordance: a slow bloom of ink saying that
+   something here answers. Staggered per region in the markup, because six of
+   them pulsing in unison would read as a machine rather than as breathing. */
+.region-breath {
+  fill: url(#breath);
+  pointer-events: none;
+  opacity: 0;
+  animation: region-breathe 4.6s ease-in-out infinite;
+}
+
+@keyframes region-breathe {
+  0%,
+  100% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* Once you have found it, stop pointing at it. */
+.ink-region:hover .region-breath,
+.ink-region:focus-visible .region-breath,
+.ink-region[data-sounding="true"] .region-breath {
+  animation: none;
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* The pulse is an invitation rather than feedback, so it cannot simply be
+     dropped — without it there is no way to tell the painting is playable at
+     all. It becomes a faint constant bloom instead. */
+  .region-breath {
+    animation: none;
+    opacity: 0.55;
+  }
+}

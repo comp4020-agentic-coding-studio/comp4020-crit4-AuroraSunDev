@@ -62,7 +62,17 @@ if (stage && strings.length > 0) {
     }
   }
 
-  window.addEventListener("resize", placeAnchors);
+  // A resize event only fires when the *window* changes. The painting can
+  // change size without that happening — the portrait rule swaps the frame to
+  // a fixed aspect ratio, a scrollbar appears, the device rotates — and each
+  // time it does, text pinned to the old transform is left pointing at nothing.
+  // Watching the element itself catches every case, including the ones a
+  // resize listener silently misses.
+  if (landscape && "ResizeObserver" in window) {
+    new ResizeObserver(placeAnchors).observe(landscape);
+  } else {
+    window.addEventListener("resize", placeAnchors);
+  }
   placeAnchors();
 
   const keyToString = new Map<string, number>();
