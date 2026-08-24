@@ -76,8 +76,20 @@ if (stage && strings.length > 0) {
     for (const anchor of ANCHORS) {
       if (!anchor.element) continue;
       const point = new DOMPoint(anchor.x, anchor.y).matrixTransform(matrix);
-      anchor.element.style.left = `${point.x - frame.left}px`;
-      anchor.element.style.top = `${point.y - frame.top + anchor.dy}px`;
+      let left = point.x - frame.left;
+      let top = point.y - frame.top + anchor.dy;
+
+      // A pad is centred on its anchor, so one anchored above the birds — who
+      // fly near the top of the picture — would hang half off the window. Keep
+      // it inside by its own half-size.
+      if (anchor.element.classList.contains("pad")) {
+        const half = anchor.element.offsetWidth / 2 || 52;
+        left = Math.min(Math.max(left, half + 8), frame.width - half - 8);
+        top = Math.min(Math.max(top, half + 8), frame.height - half - 8);
+      }
+
+      anchor.element.style.left = `${left}px`;
+      anchor.element.style.top = `${top}px`;
     }
   }
 
@@ -284,7 +296,9 @@ if (stage && strings.length > 0) {
 
   // --- the control pads -----------------------------------------------------
 
-  const HIDE_AFTER = 5000;
+  // Two seconds once you stop touching it. Any adjustment restarts the count,
+  // so it never goes away mid-drag.
+  const HIDE_AFTER = 2000;
   const pads = new Map<string, HTMLElement>();
   const padTimers = new Map<string, number>();
 
@@ -350,12 +364,14 @@ if (stage && strings.length > 0) {
       const level = 1 - (event.clientY - box.top) / box.height;
       setParams(id as ControlId, { rate, level });
       drawPad(id);
+      showPad(id);
     };
 
     grid?.addEventListener("pointerdown", (event) => {
       grid.setPointerCapture(event.pointerId);
       setFromPointer(event);
     });
+    grid?.addEventListener("pointerup", () => hidePadSoon(id));
     grid?.addEventListener("pointermove", (event) => {
       if (event.buttons === 0) return;
       setFromPointer(event);
@@ -364,10 +380,12 @@ if (stage && strings.length > 0) {
     pad.querySelector<HTMLInputElement>(".pad-x")?.addEventListener("input", (event) => {
       setParams(id as ControlId, { rate: Number((event.target as HTMLInputElement).value) / 100 });
       drawPad(id);
+      showPad(id);
     });
     pad.querySelector<HTMLInputElement>(".pad-y")?.addEventListener("input", (event) => {
       setParams(id as ControlId, { level: Number((event.target as HTMLInputElement).value) / 100 });
       drawPad(id);
+      showPad(id);
     });
 
     pad.addEventListener("pointerenter", () => showPad(id));

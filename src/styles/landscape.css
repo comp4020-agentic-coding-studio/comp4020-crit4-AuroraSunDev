@@ -403,3 +403,31 @@
   outline: 2px solid var(--ink);
   outline-offset: 4px;
 }
+
+/* The people, and the instrument. They are the darkest marks on the page and
+   they sit on a mid-grey hill, so ink blooming under them would be invisible —
+   these get light instead. Unlike the landscape's hints, which point at things
+   you have not found yet and get out of the way once you have, these are a
+   response to the pointer being on them, so hover is when they are brightest. */
+[data-part="boya"] .region-breath,
+[data-part="ziqi"] .region-breath {
+  fill: url(#breath-light);
+}
+
+[data-part="qin"] .region-breath {
+  fill: url(#breath-bright);
+}
+
+[data-part="boya"]:hover .region-breath,
+[data-part="boya"]:focus-visible .region-breath,
+[data-part="ziqi"]:hover .region-breath,
+[data-part="ziqi"]:focus-visible .region-breath {
+  animation: none;
+  opacity: 0.9;
+}
+
+[data-part="qin"]:hover .region-breath,
+[data-part="qin"]:focus-visible .region-breath {
+  animation: none;
+  opacity: 1;
+}
