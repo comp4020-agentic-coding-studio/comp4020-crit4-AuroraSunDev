@@ -1,0 +1,108 @@
+/* Scene B — the view from behind the instrument.
+   Seven strings running away from you across a lacquered body. */
+
+.guqin {
+  display: grid;
+  grid-template-rows: 1fr auto;
+  min-height: 100dvh;
+  padding: calc(var(--edge) * 2) var(--edge) var(--edge);
+}
+
+.guqin-body {
+  align-self: center;
+  width: min(100%, 68rem);
+  margin-inline: auto;
+  padding: clamp(1.5rem, 4vh, 3rem) clamp(0.5rem, 3vw, 2rem);
+  /* The qin's lacquered face: dark, warm, and slightly uneven across its
+     length the way a very old finish is. */
+  background:
+    radial-gradient(120% 90% at 50% 40%, rgb(92 58 38 / 22%), transparent 70%),
+    linear-gradient(180deg, #2b211a 0%, #3a2c22 45%, #241c16 100%);
+  border-radius: 3px;
+  box-shadow: 0 1.5rem 3rem rgb(28 26 23 / 28%);
+}
+
+.guqin-strings {
+  display: grid;
+  /* Even spacing, and the row height is what makes the hit target big enough
+     to find with a thumb — 44px is the floor and this stays above it. */
+  gap: clamp(0.35rem, 1.4vh, 0.9rem);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.guqin-string {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  /* Generous, because the string is a line but the thing you aim at is a band.
+     A 1px target would be unplayable with a finger and unpleasant with a mouse. */
+  min-height: max(2.75rem, 6vh);
+  border-radius: 2px;
+}
+
+.guqin-string:focus-visible {
+  outline-offset: -3px;
+}
+
+.guqin-string-line {
+  display: block;
+  width: 100%;
+  /* Wound silk: the low strings are visibly thicker than the high ones. */
+  height: calc(1px + (6 - var(--string)) * 0.55px);
+  border-radius: 2px;
+  background: linear-gradient(
+    90deg,
+    rgb(226 214 188 / 35%) 0%,
+    rgb(238 228 205 / 92%) 12%,
+    rgb(238 228 205 / 92%) 88%,
+    rgb(226 214 188 / 35%) 100%
+  );
+  box-shadow: 0 1px 2px rgb(0 0 0 / 45%);
+}
+
+.guqin-string:hover .guqin-string-line {
+  background: rgb(246 238 220 / 100%);
+}
+
+/* The string answering a pluck. This is feedback for something the visitor just
+   did, so unlike the ambient motion in the landscape it survives a reduced
+   motion preference — it is only shortened. */
+.guqin-string.is-ringing .guqin-string-line {
+  animation: string-vibrate 620ms cubic-bezier(0.2, 0.9, 0.3, 1);
+}
+
+@keyframes string-vibrate {
+  0% {
+    scale: 1 3.2;
+    filter: brightness(1.5);
+  }
+  18% {
+    scale: 1 2.1;
+  }
+  42% {
+    scale: 1 1.5;
+  }
+  70% {
+    scale: 1 1.18;
+  }
+  100% {
+    scale: 1 1;
+    filter: brightness(1);
+  }
+}
+
+.guqin-hint {
+  margin: 1.25rem 0 0;
+  text-align: center;
+  font-size: 0.95rem;
+  letter-spacing: 0.2em;
+  color: var(--ink-mist);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .guqin-string.is-ringing .guqin-string-line {
+    animation-duration: 240ms;
+  }
+}

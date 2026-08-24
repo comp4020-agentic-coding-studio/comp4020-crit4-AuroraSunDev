@@ -1,0 +1,30 @@
+---
+import { STRINGS } from "../data/strings";
+---
+
+<section class="guqin" data-testid="scene-guqin" aria-labelledby="guqin-heading">
+  <h2 id="guqin-heading" class="sr-only">古琴</h2>
+
+  <div class="guqin-body">
+    <ol class="guqin-strings" role="list">
+      {
+        STRINGS.map((string, index) => (
+          <li class="guqin-string-row">
+            <button
+              type="button"
+              class="guqin-string"
+              data-testid={`string-${index}`}
+              data-string={index}
+              style={`--string: ${index};`}
+              aria-label={`第${string.ordinal}弦 ${string.degree}`}
+            >
+              <span class="guqin-string-line" aria-hidden="true" />
+            </button>
+          </li>
+        ))
+      }
+    </ol>
+  </div>
+
+  <p class="guqin-hint" data-testid="guqin-hint">拨弦，或按 1–7</p>
+</section>

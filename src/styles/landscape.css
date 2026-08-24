@@ -1,0 +1,74 @@
+/* Scene A — the painting.
+   Two stacked layers: the artwork, which is decorative and inert, and the hit
+   areas, which carry all of the meaning a screen reader or a keyboard can get
+   at. They are positioned in the same 0–100 coordinate space as the drawing. */
+
+.landscape {
+  position: relative;
+  min-height: 100dvh;
+}
+
+.landscape-frame {
+  position: relative;
+  width: 100%;
+  height: 100dvh;
+  overflow: hidden;
+}
+
+.landscape-art {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: var(--ink-density);
+  transition: opacity 1200ms ease;
+}
+
+.landscape-regions {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.landscape-region {
+  position: absolute;
+  left: calc(var(--x) * 1%);
+  top: calc(var(--y) * 1%);
+  width: calc(var(--w) * 1%);
+  height: calc(var(--h) * 1%);
+  /* Comfortably past the 44px floor even where a region is drawn small. */
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  display: grid;
+  place-items: end center;
+  padding-bottom: 0.4rem;
+  border-radius: 3px;
+  transition: background-color 220ms ease;
+}
+
+.landscape-region:hover,
+.landscape-region:focus-visible {
+  background: rgb(156 59 46 / 7%);
+}
+
+/* Placeholder labelling, standing in until the drawing arrives — once each
+   region is a recognisable thing in the painting, the name comes off and the
+   picture does the inviting. */
+.landscape-region-name {
+  font-size: 0.85rem;
+  letter-spacing: 0.16em;
+  color: var(--ink-soft);
+  opacity: 0;
+  transition: opacity 220ms ease;
+}
+
+.landscape-region:hover .landscape-region-name,
+.landscape-region:focus-visible .landscape-region-name {
+  opacity: 1;
+}
+
+[data-phase="still"] .landscape-region-name {
+  opacity: 0.55;
+}

@@ -1,0 +1,53 @@
+---
+// Scene A. The artwork is one decorative layer; interaction is a separate layer
+// of transparent hit areas on top of it. Keeping them apart means the painting
+// can be redrawn all week without any of the accessibility work moving, and it
+// means a screen reader hears six named things rather than one large SVG.
+//
+// The drawing itself lands in the next pass; the regions are positioned against
+// the same viewBox coordinates it will use.
+
+const REGIONS = [
+  { id: "waterfall", label: "瀑布", hint: "听水声", x: 18, y: 14, w: 12, h: 40 },
+  { id: "stream", label: "溪流", hint: "听溪水", x: 8, y: 62, w: 40, h: 16 },
+  { id: "tree", label: "松树", hint: "听风过树叶", x: 62, y: 36, w: 20, h: 30 },
+  { id: "bird", label: "飞鸟", hint: "听鸟鸣", x: 70, y: 12, w: 12, h: 14 },
+  { id: "boya", label: "伯牙 — 抚琴的人", hint: "到琴前去", x: 40, y: 66, w: 16, h: 22 },
+  { id: "ziqi", label: "钟子期 — 听琴的人", hint: "听他说", x: 62, y: 70, w: 16, h: 20 },
+] as const;
+---
+
+<section class="landscape" data-testid="scene-landscape" aria-labelledby="landscape-heading">
+  <h2 id="landscape-heading" class="sr-only">山水</h2>
+
+  <div class="landscape-frame">
+    <svg
+      class="landscape-art"
+      viewBox="0 0 100 100"
+      preserveAspectRatio="xMidYMid slice"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <rect x="0" y="0" width="100" height="100" fill="var(--paper)"></rect>
+    </svg>
+
+    <ul class="landscape-regions" role="list">
+      {
+        REGIONS.map((region) => (
+          <li>
+            <button
+              type="button"
+              class="landscape-region"
+              data-testid={`region-${region.id}`}
+              data-region={region.id}
+              style={`--x: ${region.x}; --y: ${region.y}; --w: ${region.w}; --h: ${region.h};`}
+              aria-label={`${region.label} — ${region.hint}`}
+            >
+              <span class="landscape-region-name" aria-hidden="true">{region.label}</span>
+            </button>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+</section>

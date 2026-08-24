@@ -1,23 +1,26 @@
 ---
 import Layout from "../layouts/Layout.astro";
+import Guqin from "../components/Guqin.astro";
+import Landscape from "../components/Landscape.astro";
+import "../styles/landscape.css";
+import "../styles/guqin.css";
 ---
 
 <Layout
-  title="COMP4020 prototype"
-  description="Replace this with one sentence saying what this page is. A search result and a link preview both show it."
+  title="高山流水"
+  description="伯牙与钟子期的知音故事，做成一幅可以弹奏的水墨山水：每一个声音都由浏览器实时合成。"
 >
-  <header>
-    <nav aria-label="Primary">
-      <a href="./">Home</a>
-    </nav>
-  </header>
-  <main>
-    <h1>COMP4020 prototype</h1>
-    <p data-testid="intro">
-      Replace this with your prototype. This week's brief is on the course
-      website; <code>spec/README.md</code> explains how the checks in this repo
-      relate to it.
-    </p>
+  <h1 class="inscription">高山流水</h1>
+
+  <nav class="scene-nav" aria-label="场景">
+    <button type="button" data-testid="to-landscape" data-scene-to="landscape">山水</button>
+    <button type="button" data-testid="to-guqin" data-scene-to="guqin">琴前</button>
+  </nav>
+
+  <main class="stage" data-testid="stage" data-scene="landscape" data-phase="still">
+    <Landscape />
+    <Guqin />
   </main>
-  <script src="../scripts/main.ts"></script>
 </Layout>
+
+<script src="../scripts/main.ts"></script>

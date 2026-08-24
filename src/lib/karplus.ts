@@ -47,12 +47,16 @@ const TAIL_FADE_SECONDS = 0.05;
  * Render one plucked note.
  *
  * Returns mono samples in −1…1, ready to be copied into an `AudioBuffer`.
+ *
+ * The `<ArrayBuffer>` on the return type is not decoration: TypeScript's typed
+ * arrays are generic over their backing store now, and `copyToChannel` will not
+ * accept one that might be shared memory.
  */
 export function karplusStrong(
   frequency: number,
   sampleRate: number,
   options: PluckOptions = {},
-): Float32Array {
+): Float32Array<ArrayBuffer> {
   const {
     brightness = 0.5,
     duration = 3.5,
