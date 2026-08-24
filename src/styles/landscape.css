@@ -209,3 +209,111 @@
     opacity: 0.55;
   }
 }
+
+/* ── What moves ───────────────────────────────────────────────────────────
+   main.ts publishes four numbers and draws nothing; all of the drawing is
+   here. The fall and the stream are dash offsets on threads that already
+   existed, which costs no new geometry and is why they can run at all on a
+   full-screen filtered SVG. */
+
+.pine-art {
+  translate: 0 -8px;
+}
+
+.fall-streaks path {
+  stroke-dasharray: 2.6 3.4;
+  stroke-dashoffset: calc(var(--fall-flow, 0) * -1px);
+}
+
+.stream-lines path {
+  stroke-dasharray: 3.2 2.6;
+  stroke-dashoffset: calc(var(--stream-flow, 0) * -1px);
+}
+
+/* The spray at the foot pulses on the same clock as the water above it. */
+[data-part="waterfall"][data-sounding="true"] .fall-spray {
+  animation: spray-breathe 1.9s ease-in-out infinite;
+}
+
+@keyframes spray-breathe {
+  0%,
+  100% {
+    opacity: 0.75;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* Needles bend on the gust that is making the sound. The trunk barely moves
+   and the foliage moves most, because that is how a tree loads. */
+.pine-needles {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  rotate: calc(var(--leaf-sway, 0) * 2.2deg);
+}
+
+.pine-trunk {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  rotate: calc(var(--leaf-sway, 0) * 0.7deg);
+}
+
+/* Wings, not a head. These birds are two strokes each, and squashing that pair
+   vertically is what reads as a beat — the same trick the stroke itself is: the
+   shape of the gesture rather than a drawing of a wing. */
+.bird-flock {
+  translate: -26px 2px;
+}
+
+.bird-wings {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+}
+
+[data-part="bird"][data-sounding="true"] .bird-near {
+  animation: wingbeat 0.34s ease-in-out 3;
+}
+
+[data-part="bird"][data-sounding="true"] .bird-far {
+  animation: wingbeat 0.42s ease-in-out 3;
+  animation-delay: 0.09s;
+}
+
+@keyframes wingbeat {
+  0%,
+  100% {
+    scale: 1 1;
+  }
+  40% {
+    scale: 1.04 0.34;
+  }
+  70% {
+    scale: 0.98 1.22;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Ambient motion is decoration — nobody asked the waterfall to run — so it
+     stops. The wingbeat answers a click, which makes it feedback, and feedback
+     is shortened rather than removed. */
+  .fall-streaks path,
+  .stream-lines path {
+    stroke-dasharray: none;
+  }
+
+  [data-part="waterfall"][data-sounding="true"] .fall-spray {
+    animation: none;
+  }
+
+  .pine-needles,
+  .pine-trunk {
+    rotate: 0deg;
+  }
+
+  [data-part="bird"][data-sounding="true"] .bird-near,
+  [data-part="bird"][data-sounding="true"] .bird-far {
+    animation-iteration-count: 1;
+    animation-duration: 0.22s;
+  }
+}

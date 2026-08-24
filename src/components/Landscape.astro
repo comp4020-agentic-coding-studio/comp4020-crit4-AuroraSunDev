@@ -221,8 +221,10 @@ function breathOval(hit: string): { cx: number; cy: number; rx: number; ry: numb
           d="M29.8,35 C29.5,42 29.2,49 29,56.4 L33.9,56.4 C33.7,49 33.5,42 33.3,35 Z"
         />
         <g class="fall-streaks" stroke="#8d8d8d" fill="none" stroke-linecap="round">
-          <path d="M30.6,40 C30.4,45 30.3,50 30.2,54.8" stroke-width="0.16" opacity="0.3" />
-          <path d="M32.6,42 C32.6,46 32.7,50 32.8,55" stroke-width="0.13" opacity="0.24" />
+          <path d="M30.2,36 C30,43 29.9,50 29.8,56" stroke-width="0.15" opacity="0.3" />
+          <path d="M31.2,36 C31,43 30.9,50 30.8,56" stroke-width="0.12" opacity="0.24" />
+          <path d="M32.2,36 C32.1,43 32.1,50 32.1,56" stroke-width="0.14" opacity="0.27" />
+          <path d="M33.2,36 C33.2,43 33.3,50 33.4,56" stroke-width="0.11" opacity="0.2" />
         </g>
         <!-- Where it lands: broken, dry strokes fanning outward. -->
         <g class="fall-spray" stroke="#7d7d7d" fill="none" stroke-linecap="round">
@@ -342,7 +344,7 @@ function breathOval(hit: string): { cx: number; cy: number; rx: number; ry: numb
         <!-- A pine leans. A vertical trunk with branches at even intervals is a
              diagram of a tree; the character of this one is the bend and the
              fact that the branches all reach the same way. -->
-        <g class="pine-art" transform="translate(0,-8)">
+        <g class="pine-art">
         <g class="pine-trunk" stroke="#242424" fill="none" stroke-linecap="round">
           <path d="M128.4,60 C127.4,53 128.6,46 126.4,38.4" stroke-width="0.9" />
           <path d="M127.8,51.6 C124.4,50.6 121,49.6 117.6,48.8" stroke-width="0.5" />
@@ -587,11 +589,15 @@ function breathOval(hit: string): { cx: number; cy: number; rx: number; ry: numb
       >
         <rect {...hitRect(REGIONS[3].hit)} class="region-hit" />
         <ellipse class="region-breath" {...breathOval(REGIONS[3].hit)} style="animation-delay: 0.6s" />
-        <g class="bird-strokes" stroke="#1f1f1f" fill="none" stroke-linecap="round" transform="translate(-26,2)">
+        <g class="bird-flock" stroke="#1f1f1f" fill="none" stroke-linecap="round">
+          <g class="bird-wings bird-near">
           <path d="M130,17 C132.4,14.6 134.4,14.2 135.6,16.2" stroke-width="0.5" opacity="0.85" />
           <path d="M135.6,16.2 C137,14.2 139,14.4 141,16.6" stroke-width="0.5" opacity="0.85" />
-          <path d="M144,12 C145.4,10.6 146.6,10.4 147.4,11.6" stroke-width="0.32" opacity="0.5" />
-          <path d="M147.4,11.6 C148.2,10.4 149.4,10.5 150.6,11.8" stroke-width="0.32" opacity="0.5" />
+          </g>
+          <g class="bird-wings bird-far">
+            <path d="M144,12 C145.4,10.6 146.6,10.4 147.4,11.6" stroke-width="0.32" opacity="0.5" />
+            <path d="M147.4,11.6 C148.2,10.4 149.4,10.5 150.6,11.8" stroke-width="0.32" opacity="0.5" />
+          </g>
         </g>
       </g>
 

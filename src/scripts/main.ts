@@ -1,5 +1,5 @@
 import { STRING_KEYS } from "../data/strings";
-import { chirp, toggleAmbience } from "../lib/ambience";
+import { chirp, isAmbienceActive, toggleAmbience, voiceLevel } from "../lib/ambience";
 import { ensureAudio, now, resumeAudio } from "../lib/audio";
 import { pluck } from "../lib/guqin";
 import { appendEvent, asLoop, type NoteEvent } from "../lib/performance";
@@ -225,6 +225,67 @@ if (stage && strings.length > 0) {
     play(button, 0.72);
   });
 
+  // --- what moves -----------------------------------------------------------
+
+  // This loop publishes four numbers and draws nothing. Everything visual is
+  // CSS: the fall and the stream are dash offsets, the needles are a rotation,
+  // and none of that belongs in here.
+  //
+  // Only what is currently sounding moves. Switching a voice off leaves its
+  // number where it stopped rather than snapping it home, so the water stills
+  // instead of rewinding.
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+  const flow = { waterfall: 0, stream: 0, sway: 0 };
+  let lastFrame = 0;
+  let rafId: number | null = null;
+
+  function frame(stamp: number): void {
+    // Capped at both ends. A tab left in the background hands back an enormous
+    // first delta and the water jumps a whole cycle on return — that is the
+    // upper bound. The lower bound is less obvious and cost a debugging pass:
+    // requestAnimationFrame reports the timestamp of the *start* of the frame,
+    // which can predate the performance.now() this was seeded with, so the
+    // very first delta comes back negative and the fall runs briefly upward.
+    const elapsed = Math.min(Math.max(stamp - lastFrame, 0), 100) / 1000;
+    lastFrame = stamp;
+
+    if (isAmbienceActive("waterfall")) flow.waterfall += elapsed * 34;
+    if (isAmbienceActive("stream")) flow.stream += elapsed * 9;
+
+    // The needles bend on the same gust that is making the noise, rather than
+    // on a private loop that merely looks like wind.
+    const gust = voiceLevel("tree");
+    flow.sway += elapsed * (0.7 + gust * 2.4);
+
+    stage!.style.setProperty("--fall-flow", flow.waterfall.toFixed(2));
+    stage!.style.setProperty("--stream-flow", flow.stream.toFixed(2));
+    stage!.style.setProperty("--leaf-sway", (Math.sin(flow.sway) * gust).toFixed(4));
+
+    if (isAmbienceActive("waterfall") || isAmbienceActive("stream") || gust > 0.02) {
+      rafId = requestAnimationFrame(frame);
+    } else {
+      rafId = null;
+    }
+  }
+
+  function startFlow(): void {
+    // Ambient movement is decoration — nobody asked the waterfall to run — so
+    // it is the part that goes when reduced motion is on. The string that moves
+    // because it was just plucked is feedback, and that one stays.
+    if (rafId !== null || reduceMotion.matches) return;
+    lastFrame = performance.now();
+    rafId = requestAnimationFrame(frame);
+  }
+
+  reduceMotion.addEventListener("change", () => {
+    if (reduceMotion.matches && rafId !== null) {
+      cancelAnimationFrame(rafId);
+      rafId = null;
+    } else {
+      startFlow();
+    }
+  });
+
   // --- the landscape --------------------------------------------------------
 
   function activateRegion(region: SVGGElement): void {
@@ -275,8 +336,12 @@ if (stage && strings.length > 0) {
       // The ink deepens while a voice is running. There is no switch drawn
       // anywhere, so this is the only thing telling you what is currently
       // making noise.
-      if (on) region.dataset.sounding = "true";
-      else delete region.dataset.sounding;
+      if (on) {
+        region.dataset.sounding = "true";
+        startFlow();
+      } else {
+        delete region.dataset.sounding;
+      }
     }
   }
 

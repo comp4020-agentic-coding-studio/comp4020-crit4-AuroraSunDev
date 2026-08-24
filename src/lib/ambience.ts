@@ -44,6 +44,14 @@ interface Running {
   readonly level: number;
   readonly sources: AudioScheduledSourceNode[];
   readonly timers: number[];
+  /**
+   * How hard this voice is going right now, 0…1.
+   *
+   * The drawing reads this. Wind is the reason it exists: the pine gusts, and
+   * the needles have to move with the same gust that is making the sound, or
+   * the picture and the audio are two separate performances of the same idea.
+   */
+  readonly intensity: () => number;
 }
 
 const running = new Map<AmbienceId, Running>();
@@ -87,7 +95,7 @@ function startWaterfall(context: AudioContext): Running {
   spray.start();
   drift.start();
 
-  return { gain, level: 0.26, sources: [source, spray, drift], timers: [] };
+  return { gain, level: 0.26, sources: [source, spray, drift], timers: [], intensity: () => 1 };
 }
 
 function startStream(context: AudioContext): Running {
@@ -149,7 +157,7 @@ function startStream(context: AudioContext): Running {
   };
   timers.push(window.setTimeout(bubble, 120));
 
-  return { gain, level: 0.22, sources: [bed], timers };
+  return { gain, level: 0.22, sources: [bed], timers, intensity: () => 1 };
 }
 
 function startPine(context: AudioContext): Running {
@@ -226,7 +234,7 @@ function startPine(context: AudioContext): Running {
   timers.push(window.setTimeout(gustArrives, 250));
   grain();
 
-  return { gain, level: 0.24, sources: [bed], timers };
+  return { gain, level: 0.24, sources: [bed], timers, intensity: () => strength };
 }
 
 const BUILDERS: Record<AmbienceId, (context: AudioContext) => Running> = {
@@ -262,6 +270,17 @@ export function toggleAmbience(id: AmbienceId): boolean {
 
 export function isAmbienceActive(id: AmbienceId): boolean {
   return running.has(id);
+}
+
+/**
+ * How hard a voice is going, 0…1, or 0 when it is off.
+ *
+ * The painting reads this so that what moves is driven by the same number that
+ * is making the sound — the needles bend on the gust you can hear, rather than
+ * on a separate loop that happens to look similar.
+ */
+export function voiceLevel(id: AmbienceId): number {
+  return running.get(id)?.intensity() ?? 0;
 }
 
 /**
