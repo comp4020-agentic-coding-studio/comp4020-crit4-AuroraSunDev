@@ -20,6 +20,47 @@ import "../styles/guqin.css";
     <button type="button" data-testid="to-guqin" data-scene-to="guqin">At the qin</button>
   </nav>
 
+  <button
+    type="button"
+    class="help-open"
+    data-testid="help-open"
+    aria-haspopup="dialog"
+    aria-label="How to play — mouse, touch and keyboard"
+  >
+    <svg class="help-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <circle cx="10.2" cy="10.2" r="6.4" />
+      <line x1="14.9" y1="14.9" x2="20.5" y2="20.5" />
+    </svg>
+  </button>
+
+  <dialog class="help-dialog" data-testid="help-dialog" aria-labelledby="help-heading">
+    <h2 id="help-heading">How to play</h2>
+
+    <p>
+      Every mark in the painting is something you can sound. Click or tap it;
+      hovering near one brings up its small ink control — drag the dot, or the
+      axes themselves, to shape it.
+    </p>
+
+    <h3>The control pads</h3>
+    <p>
+      Left–right is how fast or how much of it there is — more water, a
+      quicker phrase, a stronger gust. Up–down is how loud.
+    </p>
+
+    <h3>Keyboard — the landscape</h3>
+    <ul>
+      <li><kbd>&larr;</kbd> <kbd>&uarr;</kbd> <kbd>&darr;</kbd> <kbd>&rarr;</kbd> move between the waterfall, the stream, the pine, the bird, Boya and the qin — the first press starts on the stream.</li>
+      <li><kbd>space</kbd> plays or pauses whatever you're on, the same as clicking it.</li>
+      <li><kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> nudge that thing's control pad — <kbd>W</kbd>/<kbd>S</kbd> up and down (loudness), <kbd>A</kbd>/<kbd>D</kbd> left and right (speed).</li>
+    </ul>
+
+    <h3>Keyboard — at the qin</h3>
+    <p>The seven strings answer <kbd>1</kbd>&ndash;<kbd>7</kbd> or <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> <kbd>F</kbd> <kbd>G</kbd> <kbd>H</kbd> <kbd>J</kbd>.</p>
+
+    <button type="button" class="help-close" data-testid="help-close">Close</button>
+  </dialog>
+
   <main class="stage" data-testid="stage" data-scene="landscape" data-phase="still">
     <Landscape />
     <Guqin />

@@ -63,6 +63,15 @@ function hitRect(hit: string): { x: number; y: number; width: number; height: nu
   return { x, y, width, height };
 }
 
+// Where each region sits in the painting, in the same viewBox units as the
+// hit rect it comes from. main.ts reads this off the markup (data-cx/data-cy)
+// so that arrow-key navigation moves toward the thing that is actually next
+// to you on screen, rather than the plain DOM/tab order.
+function regionCentre(hit: string): { cx: number; cy: number } {
+  const { x, y, width, height } = hitRect(hit);
+  return { cx: x + width / 2, cy: y + height / 2 };
+}
+
 /** The soft bloom that sits under a region, sized from its hit area. */
 function breathOval(hit: string): { cx: number; cy: number; rx: number; ry: number } {
   const { x, y, width, height } = hitRect(hit);
@@ -246,6 +255,8 @@ function breathOval(hit: string): { cx: number; cy: number; rx: number; ry: numb
         class="ink-region"
         data-part="waterfall"
         data-region="waterfall"
+        data-cx={regionCentre(REGIONS[0].hit).cx}
+        data-cy={regionCentre(REGIONS[0].hit).cy}
         role="button"
         tabindex="0"
         aria-label={REGIONS[0].label}
@@ -376,6 +387,8 @@ function breathOval(hit: string): { cx: number; cy: number; rx: number; ry: numb
         class="ink-region"
         data-part="tree"
         data-region="tree"
+        data-cx={regionCentre(REGIONS[2].hit).cx}
+        data-cy={regionCentre(REGIONS[2].hit).cy}
         role="button"
         tabindex="0"
         aria-label={REGIONS[2].label}
@@ -443,6 +456,8 @@ function breathOval(hit: string): { cx: number; cy: number; rx: number; ry: numb
         class="ink-region"
         data-part="stream"
         data-region="stream"
+        data-cx={regionCentre(REGIONS[1].hit).cx}
+        data-cy={regionCentre(REGIONS[1].hit).cy}
         role="button"
         tabindex="0"
         aria-label={REGIONS[1].label}
@@ -524,6 +539,8 @@ function breathOval(hit: string): { cx: number; cy: number; rx: number; ry: numb
         class="ink-region"
         data-part="boya"
         data-region="boya"
+        data-cx={regionCentre(REGIONS[4].hit).cx}
+        data-cy={regionCentre(REGIONS[4].hit).cy}
         role="button"
         tabindex="0"
         aria-label={REGIONS[4].label}
@@ -536,6 +553,8 @@ function breathOval(hit: string): { cx: number; cy: number; rx: number; ry: numb
         class="ink-region"
         data-part="qin"
         data-region="qin"
+        data-cx={regionCentre(REGIONS[5].hit).cx}
+        data-cy={regionCentre(REGIONS[5].hit).cy}
         role="button"
         tabindex="0"
         aria-label={REGIONS[5].label}
@@ -548,6 +567,8 @@ function breathOval(hit: string): { cx: number; cy: number; rx: number; ry: numb
         class="ink-region"
         data-part="ziqi"
         data-region="ziqi"
+        data-cx={regionCentre(REGIONS[6].hit).cx}
+        data-cy={regionCentre(REGIONS[6].hit).cy}
         role="button"
         tabindex="0"
         aria-label={REGIONS[6].label}
@@ -561,6 +582,8 @@ function breathOval(hit: string): { cx: number; cy: number; rx: number; ry: numb
         class="ink-region"
         data-part="bird"
         data-region="bird"
+        data-cx={regionCentre(REGIONS[3].hit).cx}
+        data-cy={regionCentre(REGIONS[3].hit).cy}
         role="button"
         tabindex="0"
         aria-label={REGIONS[3].label}

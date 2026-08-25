@@ -25,6 +25,13 @@ const sceneButtons = [...document.querySelectorAll<HTMLButtonElement>("[data-sce
 // The regions are SVG groups rather than HTML buttons, so that the drawn thing
 // is the control and stays welded to the artwork at any aspect ratio.
 const regions = [...document.querySelectorAll<SVGGElement>("[data-region]")];
+const REGION_BY_ID = new Map(regions.map((region) => [region.dataset.region ?? "", region]));
+
+const helpOpen = document.querySelector<HTMLButtonElement>('[data-testid="help-open"]');
+const helpDialog = document.querySelector<HTMLDialogElement>('[data-testid="help-dialog"]');
+const helpClose = document.querySelector<HTMLButtonElement>('[data-testid="help-close"]');
+helpOpen?.addEventListener("click", () => helpDialog?.showModal());
+helpClose?.addEventListener("click", () => helpDialog?.close());
 
 const SCENES = ["landscape", "guqin"] as const;
 type Scene = (typeof SCENES)[number];
@@ -418,6 +425,100 @@ if (stage && strings.length > 0) {
     region.addEventListener("focus", () => showPad(padId));
     region.addEventListener("blur", () => hidePadSoon(padId));
   }
+
+  // --- keyboard: moving between the things you can play ----------------------
+  //
+  // Tab already reaches every region in DOM order and Enter/Space already
+  // sounds whichever one is focused (wired below, alongside the region click
+  // handlers). Arrow keys add a second, spatial way to move between them —
+  // toward whatever is actually next to it in the picture — starting from the
+  // stream, because that is what is already running when you arrive. WASD then
+  // nudges that region's own pad, so the whole scene is playable without a
+  // pointer at all.
+  const PAD_STEP = 0.055;
+
+  function regionCentre(region: SVGGElement): { x: number; y: number } {
+    return { x: Number(region.dataset.cx ?? 0), y: Number(region.dataset.cy ?? 0) };
+  }
+
+  const ARROW_DIRECTION: Record<string, { dx: number; dy: number }> = {
+    ArrowUp: { dx: 0, dy: -1 },
+    ArrowDown: { dx: 0, dy: 1 },
+    ArrowLeft: { dx: -1, dy: 0 },
+    ArrowRight: { dx: 1, dy: 0 },
+  };
+
+  // The nearest region actually ahead of you on the pressed axis, breaking
+  // ties by however little it drifts sideways — the same rule a TV remote's
+  // directional focus uses, done by hand because nothing like it ships for an
+  // arbitrary group of SVG shapes.
+  function regionInDirection(from: SVGGElement, key: string): SVGGElement | null {
+    const direction = ARROW_DIRECTION[key];
+    if (!direction) return null;
+    const origin = regionCentre(from);
+    let best: SVGGElement | null = null;
+    let bestScore = Infinity;
+
+    for (const region of regions) {
+      if (region === from) continue;
+      const point = regionCentre(region);
+      const dx = point.x - origin.x;
+      const dy = point.y - origin.y;
+      const along = dx * direction.dx + dy * direction.dy;
+      if (along <= 0) continue; // behind or level with you: not this key's answer
+      const across = Math.abs(dx * direction.dy - dy * direction.dx);
+      const score = along + across * 1.6;
+      if (score < bestScore) {
+        bestScore = score;
+        best = region;
+      }
+    }
+    return best;
+  }
+
+  const AXIS_NUDGE: Record<string, { rate?: number; level?: number }> = {
+    w: { level: PAD_STEP },
+    s: { level: -PAD_STEP },
+    d: { rate: PAD_STEP },
+    a: { rate: -PAD_STEP },
+  };
+
+  document.addEventListener("keydown", (event) => {
+    if (event.metaKey || event.ctrlKey || event.altKey) return;
+    if (stage!.dataset.scene !== "landscape") return;
+    // The help dialog owns the keyboard while it's open — arrow keys there
+    // should scroll its text, not reach through to the painting behind it.
+    if (helpDialog?.open) return;
+
+    const focused = regions.find((region) => region === document.activeElement) ?? null;
+
+    if (event.key in ARROW_DIRECTION) {
+      event.preventDefault();
+      if (!focused) {
+        // The first press always starts on the stream, whether or not anything
+        // was reached by Tab first.
+        REGION_BY_ID.get("stream")?.focus();
+        return;
+      }
+      regionInDirection(focused, event.key)?.focus();
+      return;
+    }
+
+    if (!focused) return;
+    const nudge = AXIS_NUDGE[event.key.toLowerCase()];
+    if (!nudge) return;
+    const padId = PAD_FOR[focused.dataset.region ?? ""];
+    if (!padId) return;
+
+    event.preventDefault();
+    const current = getParams(padId as ControlId);
+    setParams(padId as ControlId, {
+      rate: current.rate + (nudge.rate ?? 0),
+      level: current.level + (nudge.level ?? 0),
+    });
+    drawPad(padId);
+    showPad(padId);
+  });
 
   // --- what moves -----------------------------------------------------------
 
