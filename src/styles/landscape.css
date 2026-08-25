@@ -138,7 +138,12 @@
   writing-mode: vertical-rl;
   translate: -50% 0;
   font-family: var(--han);
-  font-size: clamp(1.05rem, 1.9vw, 1.55rem);
+  /* The old floor (1.05rem) was bigger than 1.9vw ever gets on a phone-width
+     screen, so the clamp never actually reached it there — the calligraphy sat
+     at a fixed size regardless of how small the painting itself had become.
+     A lower floor and a steeper vw term let it keep shrinking down to 390px;
+     the ceiling is unchanged, so nothing moves at 1920x1080. */
+  font-size: clamp(0.68rem, 3.4vw, 1.55rem);
   letter-spacing: 0.28em;
   line-height: 1.5;
   color: var(--ink);
@@ -152,7 +157,10 @@
   translate: -50% 0;
   max-width: min(26rem, 46vw);
   text-align: center;
-  font-size: clamp(0.95rem, 1.4vw, 1.18rem);
+  /* Same fix as .zhiyin-han: the floor used to outrank what 1.4vw produces on
+     a phone, so the gloss stayed full-size on the one viewport where the
+     painting has the least room for it. */
+  font-size: clamp(0.6rem, 2.6vw, 1.18rem);
   font-style: italic;
   line-height: 1.5;
   letter-spacing: 0.03em;
@@ -332,8 +340,13 @@
 
 .pad {
   position: absolute;
-  width: 6.5rem;
-  height: 6.5rem;
+  /* Was a flat 6.5rem — no viewport term at all, so the pad stayed exactly
+     the same size in pixels as the painting around it shrank, and by 390px
+     wide it read as a large fixed square glued over a much smaller scene.
+     The vw term shrinks it with the screen; the ceiling keeps it at the same
+     6.5rem it always was from tablet width up, so 1920x1080 is unaffected. */
+  width: clamp(3.6rem, 20vw, 6.5rem);
+  height: clamp(3.6rem, 20vw, 6.5rem);
   translate: -50% -50%;
   opacity: 0;
   visibility: hidden;
@@ -390,7 +403,7 @@
   position: absolute;
   right: 0;
   bottom: -0.15rem;
-  font-size: 0.58rem;
+  font-size: clamp(0.44rem, 1.6vw, 0.58rem);
   letter-spacing: 0.14em;
   text-transform: lowercase;
   color: var(--ink-gloss);
